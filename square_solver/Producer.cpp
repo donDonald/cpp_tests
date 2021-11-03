@@ -1,21 +1,58 @@
+#include <string>
 #include "Producer.h"
 
-Producer::Producer(InputQueue& queue, int argc, char* argv[])
-    : _queue(queue)
+std::ostream& operator<<(std::ostream& os, const Coefficients& coefficients)
 {
-    collectCoefficients(argc, argv);
+    os << "(" << coefficients._a << " " << coefficients._b << " " << coefficients._c << ")";
+    return os;
 }
 
-void Producer::collectCoefficients(int argc, char* argv[])
+std::ostream& operator<<(std::ostream& os, const Solution& solution)
 {
-    for(int i=1; i<argc; i)
+    if(solution._x1.first==false && solution._x2.first==false)
     {
-        double a = strToDouble(argv[i]);
-        double b = i+1<argc ? strToDouble(argv[i+1]) : 0;
-        double c = i+2<argc ? strToDouble(argv[i+2]) : 0;
-        i += 3;
-        Coefficients coeffs{a, b, c};
-        _queue.push(coeffs);
+        os << "no roots";
+    }
+    else
+    {
+        os << "(";
+        if(solution._x1.first==true) os << solution._x1.second;
+        if(solution._x2.first==true) os << ", " << solution._x2.second;
+        os << ")";
+    }
+
+    if(solution._xMin.first)
+    {
+        os << " Xmin=" << solution._xMin.second;
+    }
+    else
+    {
+        os << " Xmin=undefined";
+    }
+
+    return os;
+}
+
+Producer::Producer(int argc, char* argv[])
+    : _argc(argc)
+    , _argv(argv)
+    , _argcPosition(1)
+{
+}
+
+bool Producer::peek(Coefficients& coefficients)
+{
+    if(_argcPosition < _argc)
+    {
+        coefficients._a = strToDouble(_argv[_argcPosition]);
+        coefficients._b = _argcPosition+1<_argc ? strToDouble(_argv[_argcPosition+1]) : 0;
+        coefficients._c = _argcPosition+2<_argc ? strToDouble(_argv[_argcPosition+2]) : 0;
+        _argcPosition += 3;
+        return true;
+    }
+    else
+    {
+        return false;
     }
 }
 

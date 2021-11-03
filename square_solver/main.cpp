@@ -3,9 +3,8 @@
 
 int main(int argc, char* argv[])
 {
-    InputQueue queue;
-    Producer producer(queue, argc, argv);
-    Consumer consumer(queue);
+    Producer producer(argc, argv);
+    Consumer consumer(producer);
     consumer.start();
     return 0;
 }
