@@ -5,4 +5,5 @@ add_subdirectory(square_solver)
 add_subdirectory(provider_supplier)
 add_subdirectory(btree)
 add_subdirectory(HashMap)
+add_subdirectory(tests)
 
