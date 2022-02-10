@@ -16,10 +16,10 @@
 #include <chrono>
 #include <functional>
 
-{
-    Value* _values;
+//  {
+//      Value* _values;
 
-}
+//  }
 
 template<class Key, class Value>
 class HashMap

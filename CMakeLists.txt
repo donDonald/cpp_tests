@@ -3,7 +3,7 @@ project(cpp_tests VERSION 0.0.1 LANGUAGES CXX)
 
 add_subdirectory(square_solver)
 add_subdirectory(provider_supplier)
-add_subdirectory(btree)
+add_subdirectory(BTree)
 add_subdirectory(HashMap)
 add_subdirectory(tests)
 

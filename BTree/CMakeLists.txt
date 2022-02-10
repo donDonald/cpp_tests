@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.11)
 
-project(btree)
-set(APPLICATION_NAME btree)
+project(BTree)
+set(APPLICATION_NAME BTree)
 set(CMAKE_CXX_STANDARD 14)
 
 find_package(Threads REQUIRED)

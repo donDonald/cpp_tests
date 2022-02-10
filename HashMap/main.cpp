@@ -34,23 +34,40 @@ TEST_F(TestStuff, empty_container)
     EXPECT_EQ(nullptr, ctbt().find(0));
 }
 
-TEST_F(TestStuff, insert_1_element_than_check)
-{
-    tbt().insert(0, "value 0");
-    EXPECT_EQ(1, tbt().size());
-    EXPECT_EQ(true, tbt().keyExists(0));
+//  TEST_F(TestStuff, insert_1_element_than_check)
+//  {
+//      tbt().insert(0, "value 0");
+//      EXPECT_EQ(1, tbt().size());
+//      EXPECT_EQ(true, tbt().keyExists(0));
 
-//  auto value = ttt().find(0);
-//  EXPECT_TRUE(value != nullptr);
-//  EXPECT_EQ("value 0", *value);
+//  //  auto value = ttt().find(0);
+//  //  EXPECT_TRUE(value != nullptr);
+//  //  EXPECT_EQ("value 0", *value);
 
-//  const auto cvalue = cttt().find(0);
-//  EXPECT_TRUE(cvalue != nullptr);
-//  EXPECT_EQ("value 0", *cvalue);
+//  //  const auto cvalue = cttt().find(0);
+//  //  EXPECT_TRUE(cvalue != nullptr);
+//  //  EXPECT_EQ("value 0", *cvalue);
 
-//  EXPECT_EQ("value 0", ttt().at(0));
-//  EXPECT_EQ("value 0", cttt().at(0));
-}
+//  //  EXPECT_EQ("value 0", ttt().at(0));
+//  //  EXPECT_EQ("value 0", cttt().at(0));
+//  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ///     TEST_F(BTreeTest, insert_the_same_element_for_many_times)
 ///     {
