@@ -11,7 +11,7 @@
 #include <mutex>
 #include <chrono>
 #include <iostream>
-using Counter = uint64_t;
+using Counter = uint32_t;
 constexpr auto TIME_TO_RUN = std::chrono::milliseconds(5000);
 
 // "description", threads count, counter value (kinda performance)
