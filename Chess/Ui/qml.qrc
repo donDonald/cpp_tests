@@ -1,0 +1,23 @@
+<RCC>
+    <qresource prefix="/">
+        <file>Main.qml</file>
+        <file>images/board.png</file>
+        <file>images/white.rook.png</file>
+        <file>images/white.queen.png</file>
+        <file>images/white.pawn.png</file>
+        <file>images/white.knight.png</file>
+        <file>images/white.king.png</file>
+        <file>images/white.bishop.png</file>
+        <file>images/black.rook.png</file>
+        <file>images/black.queen.png</file>
+        <file>images/black.pawn.png</file>
+        <file>images/black.knight.png</file>
+        <file>images/black.king.png</file>
+        <file>images/black.bishop.png</file>
+        <file>Piece.qml</file>
+        <file>images/bubble.png</file>
+        <file>Bubble.qml</file>
+        <file>Logic.js</file>
+        <file>Constants.js</file>
+    </qresource>
+</RCC>
