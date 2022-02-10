@@ -12,11 +12,12 @@
 #include <chrono>
 #include <iostream>
 using Counter = uint64_t;
-constexpr auto TIME_TO_RUN = std::chrono::milliseconds(1000);
+constexpr auto TIME_TO_RUN = std::chrono::milliseconds(5000);
 
-std::vector<std::tuple<std::string, int, Counter>> results; // "description", threads count, counter value (kinda performance)
+// "description", threads count, counter value (kinda performance)
+std::vector<std::tuple<std::string, int, Counter>> results;
 
-///////////////////////// Standard way of using mutex
+///////////////////////// Lets simply use std::mutex to protect that counter and do people usually do
 
 struct Example1
 {
@@ -29,7 +30,7 @@ struct Example1
     Counter counter_;
     std::atomic<bool> exitRequested_;
 
-    void threadEven()
+    void A()
     {
         while(!exitRequested_)
         {
@@ -41,7 +42,7 @@ struct Example1
         }
     }
  
-    void threadOdd()
+    void B()
     {
         while(!exitRequested_)
         {
@@ -61,8 +62,8 @@ TEST(Luxtest, mutex_2_threads)
 {
     Example1 example;
     example.exitRequested_ = false;
-    std::thread t1(&Example1::threadEven, &example);
-    std::thread t2(&Example1::threadOdd, &example);
+    std::thread t1(&Example1::A, &example);
+    std::thread t2(&Example1::B, &example);
 
     std::this_thread::sleep_for(TIME_TO_RUN);
     example.exitRequested_ = true;
@@ -86,12 +87,12 @@ TEST(Luxtest, mutex_4_threads)
 
     for(int i=0; i<2;++i)
     {
-        std::thread t(&Example1::threadEven, &example);
+        std::thread t(&Example1::A, &example);
         threads.push_back(std::move(t));
     }
     for(int i=0; i<2;++i)
     {
-        std::thread t(&Example1::threadOdd, &example);
+        std::thread t(&Example1::B, &example);
         threads.push_back(std::move(t));
     }
 
@@ -119,12 +120,12 @@ TEST(Luxtest, mutex_8_threads)
 
     for(int i=0; i<4;++i)
     {
-        std::thread t(&Example1::threadEven, &example);
+        std::thread t(&Example1::A, &example);
         threads.push_back(std::move(t));
     }
     for(int i=0; i<4;++i)
     {
-        std::thread t(&Example1::threadOdd, &example);
+        std::thread t(&Example1::B, &example);
         threads.push_back(std::move(t));
     }
 
@@ -144,85 +145,189 @@ TEST(Luxtest, mutex_8_threads)
 
 
 
-///////////////////////// Using Compare-And-Swap
-
-constexpr auto DELAY = std::chrono::milliseconds::zero();
-//constexpr auto DELAY = std::chrono::milliseconds(1);
-std::atomic<bool> exitRequested = false;
-std::mutex coutMutex;
-
-void printSomeStuff(const std::string& id, int oldValue, int newValue)
+TEST(Luxtest, mutex_16_threads)
 {
-    std::lock_guard lock(coutMutex);
-    std::cout << "thread[" << id << "], old value:" << oldValue << ", new value:" << newValue << std::endl;
-}
+    Example1 example;
+    example.exitRequested_ = false;
+    std::vector<std::thread> threads; 
 
-void threadEven(std::atomic<Counter>& value, std::chrono::milliseconds delay)
-{
-    while(!exitRequested)
+    for(int i=0; i<8;++i)
     {
-        Counter oldValue, newValue;
-        do {
-            oldValue = value.load(); // Fetch atomic integer
-            newValue = oldValue;
-            bool isEven = (oldValue%2 == 0);
-            if(isEven)
-            {
-                newValue = oldValue + 1;
-//              {
-//                  std::lock_guard lock(coutMutex);
-//                  std::cout << "EVEN-incrementing" << std::endl;
-//              }
-            }
-        } while(!value.compare_exchange_weak(oldValue, newValue));
-//      printSomeStuff("even", oldValue, newValue);
-        if(std::chrono::milliseconds::zero() != delay)
-            std::this_thread::sleep_for(delay);
+        std::thread t(&Example1::A, &example);
+        threads.push_back(std::move(t));
     }
+    for(int i=0; i<8;++i)
+    {
+        std::thread t(&Example1::B, &example);
+        threads.push_back(std::move(t));
+    }
+
+    std::this_thread::sleep_for(TIME_TO_RUN);
+    example.exitRequested_ = true;
+
+    for(auto& t: threads)
+    {
+        t.join();
+    }
+
+//  std::cout << "resulting value:" << example.counter_ << std::endl;
+    auto result = std::make_tuple("mutex_16_threads", 16, example.counter_);
+    results.push_back(result);
 }
 
-void threadOdd(std::atomic<Counter>& value, std::chrono::milliseconds delay)
+
+
+
+TEST(Luxtest, mutex_32_threads)
 {
-    while(!exitRequested)
+    Example1 example;
+    example.exitRequested_ = false;
+    std::vector<std::thread> threads; 
+
+    for(int i=0; i<16;++i)
     {
-        Counter oldValue, newValue;
-        do {
-            oldValue = value.load(); // Fetch atomic integer
-            newValue = oldValue;
-            bool isEven = (oldValue%2 == 0);
-            if(!isEven)
-            {
-                newValue = oldValue + 1;
-//              {
-//                  std::lock_guard lock(coutMutex);
-//                  std::cout << "ODD-incrementing" << std::endl;
-//              }
-            }
-        } while(!value.compare_exchange_weak(oldValue, newValue));
-//      printSomeStuff("odd", oldValue, newValue);
-        if(std::chrono::milliseconds::zero() != delay)
-            std::this_thread::sleep_for(delay);
+        std::thread t(&Example1::A, &example);
+        threads.push_back(std::move(t));
     }
+    for(int i=0; i<16;++i)
+    {
+        std::thread t(&Example1::B, &example);
+        threads.push_back(std::move(t));
+    }
+
+    std::this_thread::sleep_for(TIME_TO_RUN);
+    example.exitRequested_ = true;
+
+    for(auto& t: threads)
+    {
+        t.join();
+    }
+
+//  std::cout << "resulting value:" << example.counter_ << std::endl;
+    auto result = std::make_tuple("mutex_32_threads", 32, example.counter_);
+    results.push_back(result);
 }
+
+
+
+
+TEST(Luxtest, mutex_64_threads)
+{
+    Example1 example;
+    example.exitRequested_ = false;
+    std::vector<std::thread> threads; 
+
+    for(int i=0; i<32;++i)
+    {
+        std::thread t(&Example1::A, &example);
+        threads.push_back(std::move(t));
+    }
+    for(int i=0; i<32;++i)
+    {
+        std::thread t(&Example1::B, &example);
+        threads.push_back(std::move(t));
+    }
+
+    std::this_thread::sleep_for(TIME_TO_RUN);
+    example.exitRequested_ = true;
+
+    for(auto& t: threads)
+    {
+        t.join();
+    }
+
+//  std::cout << "resulting value:" << example.counter_ << std::endl;
+    auto result = std::make_tuple("mutex_64_threads", 64, example.counter_);
+    results.push_back(result);
+}
+
+
+
+
+///////////////////////// Using Compare-And-Swap provided by std::atomic::compare_exchange_weak
+
+struct Example2
+{
+    Example2()
+        : exitRequested_(false)
+        {}
+
+    std::chrono::milliseconds DELAY = std::chrono::milliseconds::zero();
+    std::atomic<bool> exitRequested_;
+    std::mutex coutMutex_;
+
+    void printSomeStuff(const std::string& id, int oldValue, int newValue)
+    {
+        std::lock_guard lock(coutMutex_);
+        std::cout << "thread[" << id << "], old value:" << oldValue << ", new value:" << newValue << std::endl;
+    }
+
+    void A(std::atomic<Counter>& counter, std::chrono::milliseconds delay)
+    {
+        while(!exitRequested_)
+        {
+            Counter oldValue, newValue;
+            do {
+                oldValue = counter.load(); // Fetch atomic integer
+                newValue = oldValue;
+                bool isEven = (oldValue%2 == 0);
+                if(isEven)
+                {
+                    newValue = oldValue + 1;
+    //              {
+    //                  std::lock_guard lock(coutMutex);
+    //                  std::cout << "EVEN-incrementing" << std::endl;
+    //              }
+                }
+            } while(!counter.compare_exchange_weak(oldValue, newValue));
+    //      printSomeStuff("even", oldValue, newValue);
+            if(std::chrono::milliseconds::zero() != delay)
+                std::this_thread::sleep_for(delay);
+        }
+    }
+
+    void B(std::atomic<Counter>& counter, std::chrono::milliseconds delay)
+    {
+        while(!exitRequested_)
+        {
+            Counter oldValue, newValue;
+            do {
+                oldValue = counter.load(); // Fetch atomic integer
+                newValue = oldValue;
+                bool isEven = (oldValue%2 == 0);
+                if(!isEven)
+                {
+                    newValue = oldValue + 1;
+    //              {
+    //                  std::lock_guard lock(coutMutex);
+    //                  std::cout << "ODD-incrementing" << std::endl;
+    //              }
+                }
+            } while(!counter.compare_exchange_weak(oldValue, newValue));
+    //      printSomeStuff("odd", oldValue, newValue);
+            if(std::chrono::milliseconds::zero() != delay)
+                std::this_thread::sleep_for(delay);
+        }
+    }
+};
 
 
 
 
 TEST(Luxtest, CAS_EvenThreadStartingEven)
 {
-    exitRequested = false;
-    const auto delay = DELAY;
-    std::atomic<Counter> value = 2;
+    Example2 example;
+    const auto delay = example.DELAY;
+    std::atomic<Counter> counter = 2;
 
-    std::thread t(threadEven, std::ref(value), delay);
+    std::thread t(&Example2::A, &example, std::ref(counter), delay);
     std::this_thread::sleep_for(TIME_TO_RUN);
-    exitRequested = true;
+    example.exitRequested_ = true;
 
     t.join();
-//  std::cout << "resulting value:" << value.load() << std::endl;
 
-    EXPECT_EQ(2+1, value);
-    auto result = std::make_tuple("CAS_EvenThreadStartingEven", 1, value.load());
+    EXPECT_EQ(2+1, counter);
+    auto result = std::make_tuple("CAS_EvenThreadStartingEven", 1, counter.load());
     results.push_back(result);
 }
 
@@ -231,19 +336,18 @@ TEST(Luxtest, CAS_EvenThreadStartingEven)
 
 TEST(Luxtest, CAS_EvenThreadStartingOdd)
 {
-    exitRequested = false;
-    const auto delay = DELAY;
-    std::atomic<Counter> value = 13;
+    Example2 example;
+    const auto delay = example.DELAY;
+    std::atomic<Counter> counter = 13;
 
-    std::thread t(threadEven, std::ref(value), delay);
+    std::thread t(&Example2::A, &example, std::ref(counter), delay);
     std::this_thread::sleep_for(TIME_TO_RUN);
-    exitRequested = true;
+    example.exitRequested_ = true;
 
     t.join();
-//  std::cout << "resulting value:" << value.load() << std::endl;
-    EXPECT_EQ(13, value);
+    EXPECT_EQ(13, counter);
 
-    auto result = std::make_tuple("CAS_EvenThreadStartingOdd", 1, value.load());
+    auto result = std::make_tuple("CAS_EvenThreadStartingOdd", 1, counter.load());
     results.push_back(result);
 }
 
@@ -252,19 +356,18 @@ TEST(Luxtest, CAS_EvenThreadStartingOdd)
 
 TEST(Luxtest, CAS_OddThreadStartingEven)
 {
-    exitRequested = false;
-    const auto delay = DELAY;
-    std::atomic<Counter> value = 100;
+    Example2 example;
+    const auto delay = example.DELAY;
+    std::atomic<Counter> counter = 100;
 
-    std::thread t(threadOdd, std::ref(value), delay);
+    std::thread t(&Example2::B, &example, std::ref(counter), delay);
     std::this_thread::sleep_for(TIME_TO_RUN);
-    exitRequested = true;
+    example.exitRequested_ = true;
 
     t.join();
-//  std::cout << "resulting value:" << value.load() << std::endl;
-    EXPECT_EQ(100, value);
+    EXPECT_EQ(100, counter);
 
-    auto result = std::make_tuple("CAS_OddThreadStartingEven", 1, value.load());
+    auto result = std::make_tuple("CAS_OddThreadStartingEven", 1, counter.load());
     results.push_back(result);
 }
 
@@ -273,54 +376,53 @@ TEST(Luxtest, CAS_OddThreadStartingEven)
 
 TEST(Luxtest, CAS_OddThreadStartingOdd)
 {
-    exitRequested = false;
-    const auto delay = DELAY;
-    std::atomic<Counter> value = 101;
+    Example2 example;
+    const auto delay = example.DELAY;
+    std::atomic<Counter> counter = 101;
 
-    std::thread t(threadOdd, std::ref(value), delay);
+    std::thread t(&Example2::B, &example, std::ref(counter), delay);
     std::this_thread::sleep_for(TIME_TO_RUN);
-    exitRequested = true;
+    example.exitRequested_ = true;
 
     t.join();
-//  std::cout << "resulting value:" << value.load() << std::endl;
-    EXPECT_EQ(102, value);
+    EXPECT_EQ(102, counter);
 
-    auto result = std::make_tuple("CAS_OddThreadStartingOdd", 1, value.load());
+    auto result = std::make_tuple("CAS_OddThreadStartingOdd", 1, counter.load());
     results.push_back(result);
 }
 
 
 
 
-TEST(Luxtest, CAS_EvenAndOddThreads)
+TEST(Luxtest, CAS_Run2Threads)
 {
-    exitRequested = false;
-    const auto delay = DELAY;
-    std::atomic<Counter> value = 1000;
+    Example2 example;
+    const auto delay = example.DELAY;
+    std::atomic<Counter> counter = 1000;
 
-    std::thread t1(threadEven, std::ref(value), delay);
-    std::thread t2(threadOdd, std::ref(value), delay);
+    std::thread t1(&Example2::A, &example, std::ref(counter), delay);
+    std::thread t2(&Example2::B, &example, std::ref(counter), delay);
 
     std::this_thread::sleep_for(TIME_TO_RUN);
-    exitRequested = true;
+    example.exitRequested_ = true;
 
     t1.join();
     t2.join();
 
-    Counter v = value.load();
+    Counter v = counter.load();
     const int threads_count = 2;
-//  std::cout << "initial value:" << 1000 << std::endl;
-//  std::cout << "resulting value:" << v << std::endl;
+//  std::cout << "initial counter:" << 1000 << std::endl;
+//  std::cout << "resulting counter:" << v << std::endl;
 //  std::cout << "counted:" << (v-1000) << " times"<< std::endl;
     EXPECT_TRUE(v > 1000);
     if(delay != std::chrono::milliseconds::zero())
     {
         int expected = 1000 + (TIME_TO_RUN/delay)*threads_count;
-        std::cout << "expected max value:" << expected << std::endl;
+        std::cout << "expected max counter:" << expected << std::endl;
         EXPECT_TRUE(v < expected);
     }
 
-    auto result = std::make_tuple("CAS_EvenAndOddThreads", 2, value.load());
+    auto result = std::make_tuple("CAS_Run2Threads", 2, counter.load());
     results.push_back(result);
 }
 
@@ -329,44 +431,44 @@ TEST(Luxtest, CAS_EvenAndOddThreads)
 
 TEST(Luxtest, CAS_Run4Threads)
 {
-    exitRequested = false;
-    const auto delay = DELAY;
-    std::atomic<Counter> value = 5000;
+    Example2 example;
+    const auto delay = example.DELAY;
+    std::atomic<Counter> counter = 5000;
     std::vector<std::thread> threads; 
 
     for(int i=0; i<2;++i)
     {
-        std::thread t(threadEven, std::ref(value), delay);
+        std::thread t(&Example2::A, &example, std::ref(counter), delay);
         threads.push_back(std::move(t));
     }
     for(int i=0; i<2;++i)
     {
-        std::thread t(threadOdd, std::ref(value), delay);
+        std::thread t(&Example2::B, &example, std::ref(counter), delay);
         threads.push_back(std::move(t));
     }
 
     std::this_thread::sleep_for(TIME_TO_RUN);
-    exitRequested = true;
+    example.exitRequested_ = true;
 
     for(auto& t: threads)
     {
         t.join();
     }
 
-    Counter v = value.load();
+    Counter v = counter.load();
     const int threads_count = 4;
-//  std::cout << "initial value:" << 5000 << std::endl;
-//  std::cout << "resulting value:" << v << std::endl;
+//  std::cout << "initial counter:" << 5000 << std::endl;
+//  std::cout << "resulting counter:" << v << std::endl;
 //  std::cout << "counted:" << (v-5000) << " times"<< std::endl;
     EXPECT_TRUE(v > 5000);
     if(delay != std::chrono::milliseconds::zero())
     {
         int expected = 5000 + (TIME_TO_RUN/delay)*threads_count;
-        std::cout << "expected max value:" << expected << std::endl;
+        std::cout << "expected max counter:" << expected << std::endl;
         EXPECT_TRUE(v < expected);
     }
 
-    auto result = std::make_tuple("CAS_Run4Threads", 4, value.load());
+    auto result = std::make_tuple("CAS_Run4Threads", 4, counter.load());
     results.push_back(result);
 }
 
@@ -375,45 +477,182 @@ TEST(Luxtest, CAS_Run4Threads)
 
 TEST(Luxtest, CAS_Run8Threads)
 {
-    const auto delay = DELAY;
-    exitRequested = false;
-    std::atomic<Counter> value = 10000;
-
+    Example2 example;
+    const auto delay = example.DELAY;
+    std::atomic<Counter> counter = 10000;
     std::vector<std::thread> threads; 
 
-    for(int i=0; i<5;++i)
+    for(int i=0; i<4;++i)
     {
-        std::thread t(threadEven, std::ref(value), delay);
+        std::thread t(&Example2::A, &example, std::ref(counter), delay);
         threads.push_back(std::move(t));
     }
-    for(int i=0; i<5;++i)
+    for(int i=0; i<4;++i)
     {
-        std::thread t(threadOdd, std::ref(value), delay);
+        std::thread t(&Example2::B, &example, std::ref(counter), delay);
         threads.push_back(std::move(t));
     }
 
     std::this_thread::sleep_for(TIME_TO_RUN);
-    exitRequested = true;
+    example.exitRequested_ = true;
 
     for(auto& t: threads)
     {
         t.join();
     }
 
-    Counter v = value.load();
+    Counter v = counter.load();
     const int threads_count = 8;
-//  std::cout << "initial value:" << 10000 << std::endl;
-//  std::cout << "resulting value:" << v << std::endl;
+//  std::cout << "initial counter:" << 10000 << std::endl;
+//  std::cout << "resulting counter:" << v << std::endl;
 //  std::cout << "counted:" << (v-10000) << " times"<< std::endl;
     EXPECT_TRUE(v > 10000);
     if(delay != std::chrono::milliseconds::zero())
     {
         int expected = 10000 + (TIME_TO_RUN/delay)*threads_count;
-        std::cout << "expected max value:" << expected << std::endl;
+        std::cout << "expected max counter:" << expected << std::endl;
         EXPECT_TRUE(v < expected);
     }
 
-    auto result = std::make_tuple("CAS_Run8Threads", 8, value.load());
+    auto result = std::make_tuple("CAS_Run8Threads", 8, counter.load());
+    results.push_back(result);
+}
+
+
+
+
+TEST(Luxtest, CAS_Run16Threads)
+{
+    Example2 example;
+    const auto delay = example.DELAY;
+    std::atomic<Counter> counter = 20000;
+    std::vector<std::thread> threads; 
+
+    for(int i=0; i<8;++i)
+    {
+        std::thread t(&Example2::A, &example, std::ref(counter), delay);
+        threads.push_back(std::move(t));
+    }
+    for(int i=0; i<8;++i)
+    {
+        std::thread t(&Example2::B, &example, std::ref(counter), delay);
+        threads.push_back(std::move(t));
+    }
+
+    std::this_thread::sleep_for(TIME_TO_RUN);
+    example.exitRequested_ = true;
+
+    for(auto& t: threads)
+    {
+        t.join();
+    }
+
+    Counter v = counter.load();
+    const int threads_count = 16;
+//  std::cout << "initial counter:" << 20000 << std::endl;
+//  std::cout << "resulting counter:" << v << std::endl;
+//  std::cout << "counted:" << (v-20000) << " times"<< std::endl;
+    EXPECT_TRUE(v > 20000);
+    if(delay != std::chrono::milliseconds::zero())
+    {
+        int expected = 20000 + (TIME_TO_RUN/delay)*threads_count;
+        std::cout << "expected max counter:" << expected << std::endl;
+        EXPECT_TRUE(v < expected);
+    }
+
+    auto result = std::make_tuple("CAS_Run16Threads", 16, counter.load());
+    results.push_back(result);
+}
+
+
+
+
+TEST(Luxtest, CAS_Run32Threads)
+{
+    Example2 example;
+    const auto delay = example.DELAY;
+    std::atomic<Counter> counter = 30000;
+    std::vector<std::thread> threads; 
+
+    for(int i=0; i<16;++i)
+    {
+        std::thread t(&Example2::A, &example, std::ref(counter), delay);
+        threads.push_back(std::move(t));
+    }
+    for(int i=0; i<16;++i)
+    {
+        std::thread t(&Example2::B, &example, std::ref(counter), delay);
+        threads.push_back(std::move(t));
+    }
+
+    std::this_thread::sleep_for(TIME_TO_RUN);
+    example.exitRequested_ = true;
+
+    for(auto& t: threads)
+    {
+        t.join();
+    }
+
+    Counter v = counter.load();
+    const int threads_count = 32;
+//  std::cout << "initial counter:" << 30000 << std::endl;
+//  std::cout << "resulting counter:" << v << std::endl;
+//  std::cout << "counted:" << (v-30000) << " times"<< std::endl;
+    EXPECT_TRUE(v > 30000);
+    if(delay != std::chrono::milliseconds::zero())
+    {
+        int expected = 30000 + (TIME_TO_RUN/delay)*threads_count;
+        std::cout << "expected max counter:" << expected << std::endl;
+        EXPECT_TRUE(v < expected);
+    }
+
+    auto result = std::make_tuple("CAS_Run32Threads", 32, counter.load());
+    results.push_back(result);
+}
+
+
+
+
+TEST(Luxtest, CAS_Run64Threads)
+{
+    Example2 example;
+    const auto delay = example.DELAY;
+    std::atomic<Counter> counter = 40000;
+    std::vector<std::thread> threads; 
+
+    for(int i=0; i<32;++i)
+    {
+        std::thread t(&Example2::A, &example, std::ref(counter), delay);
+        threads.push_back(std::move(t));
+    }
+    for(int i=0; i<32;++i)
+    {
+        std::thread t(&Example2::B, &example, std::ref(counter), delay);
+        threads.push_back(std::move(t));
+    }
+
+    std::this_thread::sleep_for(TIME_TO_RUN);
+    example.exitRequested_ = true;
+
+    for(auto& t: threads)
+    {
+        t.join();
+    }
+
+    Counter v = counter.load();
+    const int threads_count = 64;
+//  std::cout << "initial counter:" << 40000 << std::endl;
+//  std::cout << "resulting counter:" << v << std::endl;
+//  std::cout << "counted:" << (v-40000) << " times"<< std::endl;
+    EXPECT_TRUE(v > 40000);
+    if(delay != std::chrono::milliseconds::zero())
+    {
+        int expected = 40000 + (TIME_TO_RUN/delay)*threads_count;
+        std::cout << "expected max counter:" << expected << std::endl;
+        EXPECT_TRUE(v < expected);
+    }
+
+    auto result = std::make_tuple("CAS_Run64Threads", 64, counter.load());
     results.push_back(result);
 }
 
@@ -428,13 +667,20 @@ TEST(Luxtest, PrintTestResults)
 
 TEST(Luxtest, MutexVsCAS)
 {
-    std::cout << "2 threads, mutex:" << std::get<2>(results[0]) << " VS CAS:" << std::get<2>(results[7])<< std::endl;
-    std::cout << "4 threads, mutex:" << std::get<2>(results[1]) << " VS CAS:" << std::get<2>(results[8])<< std::endl;
-    std::cout << "8 threads, mutex:" << std::get<2>(results[2]) << " VS CAS:" << std::get<2>(results[9])<< std::endl;
+    std::cout << "################ std::mutex Vs CAS (Ensure CAS is faster)  ###############" << std::endl;
+    std::cout << "2 threads, mutex:" << std::get<2>(results[0]) << ", CAS:" << std::get<2>(results[10]) << ", CAS/std::mutex ratio:" << (double(std::get<2>(results[10]))/double(std::get<2>(results[0]))) << std::endl;
+    std::cout << "4 threads, mutex:" << std::get<2>(results[1]) << ", CAS:" << std::get<2>(results[11]) << ", CAS/std::mutex ratio:" << (double(std::get<2>(results[11]))/double(std::get<2>(results[1]))) << std::endl;
+    std::cout << "8 threads, mutex:" << std::get<2>(results[2]) << ", CAS:" << std::get<2>(results[12]) << ", CAS/std::mutex ratio:" << (double(std::get<2>(results[12]))/double(std::get<2>(results[2]))) << std::endl;
+    std::cout << "16 threads, mutex:" << std::get<2>(results[3]) << ", CAS:" << std::get<2>(results[13]) << ", CAS/std::mutex ratio:" << (double(std::get<2>(results[13]))/double(std::get<2>(results[3]))) << std::endl;
+    std::cout << "32 threads, mutex:" << std::get<2>(results[4]) << " , CAS:" << std::get<2>(results[14]) << ", CAS/std::mutex ratio:" << (double(std::get<2>(results[14]))/double(std::get<2>(results[4]))) << std::endl;
+    std::cout << "64 threads, mutex:" << std::get<2>(results[5]) << " , CAS:" << std::get<2>(results[15]) << ", CAS/std::mutex ratio:" << (double(std::get<2>(results[15]))/double(std::get<2>(results[5]))) << std::endl;
 
-    // Chack that CAS is faster that mutex
-    EXPECT_TRUE(std::get<2>(results[0]) < std::get<2>(results[7]));
-    EXPECT_TRUE(std::get<2>(results[1]) < std::get<2>(results[8]));
-    EXPECT_TRUE(std::get<2>(results[2]) < std::get<2>(results[9]));
+    // Chack that CAS is faster that std::mutex
+//  EXPECT_TRUE(std::get<2>(results[0]) < std::get<2>(results[10]));
+    EXPECT_TRUE(std::get<2>(results[1]) < std::get<2>(results[11]));
+    EXPECT_TRUE(std::get<2>(results[2]) < std::get<2>(results[12]));
+    EXPECT_TRUE(std::get<2>(results[3]) < std::get<2>(results[13]));
+    EXPECT_TRUE(std::get<2>(results[4]) < std::get<2>(results[14]));
+    EXPECT_TRUE(std::get<2>(results[5]) < std::get<2>(results[15]));
 }
 
