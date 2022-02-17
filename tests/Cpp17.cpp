@@ -6,32 +6,7 @@
 #include <iostream>
 #include <filesystem>
 
-//using namespace kz::core::utils;
-
-class Cpp17 : public ::testing::Test
-{
-public:
-//  using Component = std::string;
-//  using ComponentPtr = std::shared_ptr<Component>;
-//  Component& tbt() { return *_tbt; }
-//  const Component& ctbt() const { return *_tbt; }
-//  ComponentPtr _tbt; // tbt - "to be tested"
-
-    void SetUp()
-    {
-//      _tbt = std::make_shared<Component>();
-    }
-
-    void TearDown()
-    {
-//      _tbt.reset();
-    }
-};
-
-
-
-
-TEST_F(Cpp17, StructuredBindings)
+TEST(Cpp17, StructuredBindings)
 {
 //  https://www.fluentcpp.com/2018/06/19/3-simple-c17-features-that-will-make-your-code-simpler/
 //  https://en.cppreference.com/w/cpp/language/structured_binding
@@ -102,7 +77,7 @@ TEST_F(Cpp17, StructuredBindings)
 
 
 
-TEST_F(Cpp17, CTAD_Class_template_argument_deduction)
+TEST(Cpp17, CTAD_Class_template_argument_deduction)
 {
 //  Class template argument deduction (CTAD) / Template Argument Deduction
 //  https://en.cppreference.com/w/cpp/language/class_template_argument_deduction
@@ -178,7 +153,7 @@ TEST_F(Cpp17, CTAD_Class_template_argument_deduction)
 
 
 
-TEST_F(Cpp17, tuple_tie)
+TEST(Cpp17, tuple_tie)
 {
 //  std::tuple //  It is a generalization of std::pair                                                       \
 //  std::make_tuple(...)                                                                                     \
@@ -304,14 +279,14 @@ TEST_F(Cpp17, tuple_tie)
 
 
 
-TEST_F(Cpp17, NestedNamesaces)
+TEST(Cpp17, NestedNamesaces)
 {
 }
 
 
 
 
-TEST_F(Cpp17, StdFilesystem)
+TEST(Cpp17, StdFilesystem)
 {
     // std::filesytem
     EXPECT_EQ(true, std::filesystem::exists("/etc/hosts"));
@@ -321,7 +296,7 @@ TEST_F(Cpp17, StdFilesystem)
 
 
 
-TEST_F(Cpp17, StdOptional)
+TEST(Cpp17, StdOptional)
 {
     // std::optional
 
@@ -359,7 +334,7 @@ TEST_F(Cpp17, StdOptional)
 
 
 
-TEST_F(Cpp17, StdStringView)
+TEST(Cpp17, StdStringView)
 {
 //  std::string_view
 //  https://en.cppreference.com/w/cpp/string/basic_string_view
@@ -391,7 +366,7 @@ int sum(Args&&... args)
     return (args + ... ); // OK
 }
  
-TEST_F(Cpp17, FoldExpression)
+TEST(Cpp17, FoldExpression)
 {
 //  fold expression
 //  https://en.cppreference.com/w/cpp/language/fold
@@ -443,7 +418,7 @@ TEST_F(Cpp17, FoldExpression)
 
 
 
-TEST_F(Cpp17, SelectionInitialization)
+TEST(Cpp17, SelectionInitialization)
 {
 
     auto getval = [](){
