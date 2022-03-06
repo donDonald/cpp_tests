@@ -1,35 +1,36 @@
 #include <gtest/gtest.h>
 
-//«Its purpose is for candidate to demonstrate understanding of modern C++ features, false sharing, memory model and atomics
-
-//1.Use two threads to increment an integer. Thread A increments when even and Thread B increments when odd (for the integer problem we can have it specify up to a number provided on the command line)
-//1a. What are some of the difficulties in adding more threads? Please show the difficulties with code.
-//1b. Extra credit – Design an improved solution to the above that can scale with many threads»
-
 #include <thread>
 #include <atomic>
 #include <mutex>
 #include <chrono>
 #include <iostream>
 
+//«Its purpose is for candidate to demonstrate understanding of modern C++ features, false sharing, memory model and atomics
+//1.Use two threads to increment an integer. Thread A increments when even and Thread B increments when odd (for the integer problem we can have it specify up to a number provided on the command line)
+//1a. What are some of the difficulties in adding more threads? Please show the difficulties with code.
+//1b. Extra credit – Design an improved solution to the above that can scale with many threads»
+
 namespace Luxtest
 {
 
 using Counter = uint32_t;
+
+// Time to run tests for multhi-threading cases
 constexpr auto TIME_TO_RUN = std::chrono::milliseconds(5000);
 
-// "description", threads count, counter value (kinda performance)
+// Collection of results fr test runs: "description", threads count, counter value (kinda performance)
 std::vector<std::tuple<std::string, int, Counter>> results;
 
 
 
 
-///////////////////////// Lets simply use std::mutex to protect that counter and do people usually do
+///////////////////////// Simply using std::mutex to protect that counter and do things people usually do
 
 struct ExampleMutex
 {
 private:
-    bool exitRequested_;
+    std::atomic<bool> exitRequested_;
     std::mutex m_;
 
 public:
@@ -37,17 +38,17 @@ public:
         : counter_(0)
         , exitRequested_(false)
     {}
+    Counter counter_; // Counter to be incremented from many threads
 
     void quit() { exitRequested_ = true; }
-
-    Counter counter_;
 
     void A()
     {
         while(!exitRequested_)
         {
             std::lock_guard lock(m_);
-            if(0 == (counter_ % 2))
+            bool isEven = (counter_ % 2) == 0;
+            if(isEven)
             {
                 ++counter_;
             }
@@ -59,7 +60,8 @@ public:
         while(!exitRequested_)
         {
             std::lock_guard lock(m_);
-            if(0 != (counter_ % 2))
+            bool isOdd = (counter_ % 2) != 0;
+            if(isOdd)
             {
                 ++counter_;
             }
@@ -242,27 +244,27 @@ template<std::memory_order MO>
 struct ExampleAtomic
 {
 private:
-    bool exitRequested_;
-    std::mutex coutMutex_;
+    std::atomic<bool> exitRequested_;
+//  std::mutex coutMutex_;
 
 public:
     ExampleAtomic()
         : exitRequested_(false)
         {}
 
-    void quit() { exitRequested_ = true; }
+    void quit() { exitRequested_.store(true, std::memory_order_relaxed); }
 
     std::chrono::milliseconds DELAY = std::chrono::milliseconds::zero();
 
-    void printSomeStuff(const std::string& id, int oldValue, int newValue)
-    {
-        std::lock_guard lock(coutMutex_);
-        std::cout << "thread[" << id << "], old value:" << oldValue << ", new value:" << newValue << std::endl;
-    }
+//  void printSomeStuff(const std::string& id, int oldValue, int newValue)
+//  {
+//      std::lock_guard lock(coutMutex_);
+//      std::cout << "thread[" << id << "], old value:" << oldValue << ", new value:" << newValue << std::endl;
+//  }
 
     void A(std::atomic<Counter>& counter, std::chrono::milliseconds delay)
     {
-        while(!exitRequested_)
+        while(!exitRequested_.load(std::memory_order_relaxed))
         {
             Counter oldValue, newValue;
             do {
@@ -292,8 +294,8 @@ public:
             do {
                 oldValue = counter.load(); // Fetch atomic integer
                 newValue = oldValue;
-                bool isEven = (oldValue%2 == 0);
-                if(!isEven)
+                bool isOdd = (oldValue%2 != 0);
+                if(isOdd)
                 {
                     newValue = oldValue + 1;
     //              {
