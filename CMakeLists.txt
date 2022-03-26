@@ -5,5 +5,6 @@ add_subdirectory(square_solver)
 add_subdirectory(provider_supplier)
 add_subdirectory(BTree)
 add_subdirectory(HashMap)
+add_subdirectory(Suxtest)
 add_subdirectory(tests)
 

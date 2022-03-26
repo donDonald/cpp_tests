@@ -6,12 +6,7 @@
 #include <chrono>
 #include <iostream>
 
-//«Its purpose is for candidate to demonstrate understanding of modern C++ features, false sharing, memory model and atomics
-//1.Use two threads to increment an integer. Thread A increments when even and Thread B increments when odd (for the integer problem we can have it specify up to a number provided on the command line)
-//1a. What are some of the difficulties in adding more threads? Please show the difficulties with code.
-//1b. Extra credit – Design an improved solution to the above that can scale with many threads»
-
-namespace Luxtest
+namespace ThreadingTest
 {
 
 using Counter = uint32_t;
@@ -72,7 +67,7 @@ public:
 
 
 
-TEST(Luxtest, mutex_2_threads)
+TEST(ThreadingTest, mutex_2_threads)
 {
     using Example = ExampleMutex;
     Example example;
@@ -93,7 +88,7 @@ TEST(Luxtest, mutex_2_threads)
 
 
 
-TEST(Luxtest, mutex_4_threads)
+TEST(ThreadingTest, mutex_4_threads)
 {
     using Example = ExampleMutex;
     Example example;
@@ -122,7 +117,7 @@ TEST(Luxtest, mutex_4_threads)
 
 
 
-TEST(Luxtest, mutex_8_threads)
+TEST(ThreadingTest, mutex_8_threads)
 {
     using Example = ExampleMutex;
     Example example;
@@ -151,7 +146,7 @@ TEST(Luxtest, mutex_8_threads)
 
 
 
-TEST(Luxtest, mutex_16_threads)
+TEST(ThreadingTest, mutex_16_threads)
 {
     using Example = ExampleMutex;
     Example example;
@@ -180,7 +175,7 @@ TEST(Luxtest, mutex_16_threads)
 
 
 
-TEST(Luxtest, mutex_32_threads)
+TEST(ThreadingTest, mutex_32_threads)
 {
     using Example = ExampleMutex;
     Example example;
@@ -209,7 +204,7 @@ TEST(Luxtest, mutex_32_threads)
 
 
 
-TEST(Luxtest, mutex_64_threads)
+TEST(ThreadingTest, mutex_64_threads)
 {
     using Example = ExampleMutex;
     Example example;
@@ -315,7 +310,7 @@ public:
 
 
 //////////////////////// Using std::memory_order_seq_cst - less performance but strict ordering rules
-TEST(Luxtest, atomic_CAS_seq_cst_EvenThreadStartingEven)
+TEST(ThreadingTest, atomic_CAS_seq_cst_EvenThreadStartingEven)
 {
     using Example = ExampleAtomic<std::memory_order_seq_cst>;
     Example example;
@@ -334,7 +329,7 @@ TEST(Luxtest, atomic_CAS_seq_cst_EvenThreadStartingEven)
 
 
 
-TEST(Luxtest, atomic_CAS_seq_cst_EvenThreadStartingOdd)
+TEST(ThreadingTest, atomic_CAS_seq_cst_EvenThreadStartingOdd)
 {
     using Example = ExampleAtomic<std::memory_order_seq_cst>;
     Example example;
@@ -352,7 +347,7 @@ TEST(Luxtest, atomic_CAS_seq_cst_EvenThreadStartingOdd)
 
 
 
-TEST(Luxtest, atomic_CAS_seq_cst_OddThreadStartingEven)
+TEST(ThreadingTest, atomic_CAS_seq_cst_OddThreadStartingEven)
 {
     using Example = ExampleAtomic<std::memory_order_seq_cst>;
     Example example;
@@ -370,7 +365,7 @@ TEST(Luxtest, atomic_CAS_seq_cst_OddThreadStartingEven)
 
 
 
-TEST(Luxtest, atomic_CAS_seq_cst_OddThreadStartingOdd)
+TEST(ThreadingTest, atomic_CAS_seq_cst_OddThreadStartingOdd)
 {
     using Example = ExampleAtomic<std::memory_order_seq_cst>;
     Example example;
@@ -388,7 +383,7 @@ TEST(Luxtest, atomic_CAS_seq_cst_OddThreadStartingOdd)
 
 
 
-TEST(Luxtest, atomic_CAS_seq_cst_2_threads)
+TEST(ThreadingTest, atomic_CAS_seq_cst_2_threads)
 {
     using Example = ExampleAtomic<std::memory_order_seq_cst>;
     Example example;
@@ -424,7 +419,7 @@ TEST(Luxtest, atomic_CAS_seq_cst_2_threads)
 
 
 
-TEST(Luxtest, atomic_CAS_seq_cst_4_threads)
+TEST(ThreadingTest, atomic_CAS_seq_cst_4_threads)
 {
     using Example = ExampleAtomic<std::memory_order_seq_cst>;
     Example example;
@@ -467,7 +462,7 @@ TEST(Luxtest, atomic_CAS_seq_cst_4_threads)
 
 
 
-TEST(Luxtest, atomic_CAS_seq_cst_8_threads)
+TEST(ThreadingTest, atomic_CAS_seq_cst_8_threads)
 {
     using Example = ExampleAtomic<std::memory_order_seq_cst>;
     Example example;
@@ -511,7 +506,7 @@ TEST(Luxtest, atomic_CAS_seq_cst_8_threads)
 
 
 
-TEST(Luxtest, atomic_CAS_seq_cst_16_threads)
+TEST(ThreadingTest, atomic_CAS_seq_cst_16_threads)
 {
     using Example = ExampleAtomic<std::memory_order_seq_cst>;
     Example example;
@@ -555,7 +550,7 @@ TEST(Luxtest, atomic_CAS_seq_cst_16_threads)
 
 
 
-TEST(Luxtest, atomic_CAS_seq_cst_32_threads)
+TEST(ThreadingTest, atomic_CAS_seq_cst_32_threads)
 {
     using Example = ExampleAtomic<std::memory_order_seq_cst>;
     Example example;
@@ -599,7 +594,7 @@ TEST(Luxtest, atomic_CAS_seq_cst_32_threads)
 
 
 
-TEST(Luxtest, atomic_CAS_seq_cst_64_threads)
+TEST(ThreadingTest, atomic_CAS_seq_cst_64_threads)
 {
     using Example = ExampleAtomic<std::memory_order_seq_cst>;
     Example example;
@@ -644,7 +639,7 @@ TEST(Luxtest, atomic_CAS_seq_cst_64_threads)
 
 
 //////////////////////// Using std::memory_order_relaxed - shall be best in therms of performnce
-TEST(Luxtest, atomic_CAS_relaxed_EvenThreadStartingEven)
+TEST(ThreadingTest, atomic_CAS_relaxed_EvenThreadStartingEven)
 {
     using Example = ExampleAtomic<std::memory_order_relaxed>;
     Example example;
@@ -663,7 +658,7 @@ TEST(Luxtest, atomic_CAS_relaxed_EvenThreadStartingEven)
 
 
 
-TEST(Luxtest, atomic_CAS_relaxed_EvenThreadStartingOdd)
+TEST(ThreadingTest, atomic_CAS_relaxed_EvenThreadStartingOdd)
 {
     using Example = ExampleAtomic<std::memory_order_relaxed>;
     Example example;
@@ -681,7 +676,7 @@ TEST(Luxtest, atomic_CAS_relaxed_EvenThreadStartingOdd)
 
 
 
-TEST(Luxtest, atomic_CAS_relaxed_OddThreadStartingEven)
+TEST(ThreadingTest, atomic_CAS_relaxed_OddThreadStartingEven)
 {
     using Example = ExampleAtomic<std::memory_order_relaxed>;
     Example example;
@@ -699,7 +694,7 @@ TEST(Luxtest, atomic_CAS_relaxed_OddThreadStartingEven)
 
 
 
-TEST(Luxtest, atomic_CAS_relaxed_OddThreadStartingOdd)
+TEST(ThreadingTest, atomic_CAS_relaxed_OddThreadStartingOdd)
 {
     using Example = ExampleAtomic<std::memory_order_relaxed>;
     Example example;
@@ -717,7 +712,7 @@ TEST(Luxtest, atomic_CAS_relaxed_OddThreadStartingOdd)
 
 
 
-TEST(Luxtest, atomic_CAS_relaxed_2_threads)
+TEST(ThreadingTest, atomic_CAS_relaxed_2_threads)
 {
     using Example = ExampleAtomic<std::memory_order_relaxed>;
     Example example;
@@ -752,7 +747,7 @@ TEST(Luxtest, atomic_CAS_relaxed_2_threads)
 
 
 
-TEST(Luxtest, atomic_CAS_relaxed_4_threads)
+TEST(ThreadingTest, atomic_CAS_relaxed_4_threads)
 {
     using Example = ExampleAtomic<std::memory_order_relaxed>;
     Example example;
@@ -795,7 +790,7 @@ TEST(Luxtest, atomic_CAS_relaxed_4_threads)
 
 
 
-TEST(Luxtest, atomic_CAS_relaxed_8_threads)
+TEST(ThreadingTest, atomic_CAS_relaxed_8_threads)
 {
     using Example = ExampleAtomic<std::memory_order_relaxed>;
     Example example;
@@ -838,7 +833,7 @@ TEST(Luxtest, atomic_CAS_relaxed_8_threads)
 
 
 
-TEST(Luxtest, atomic_CAS_relaxed_16_threads)
+TEST(ThreadingTest, atomic_CAS_relaxed_16_threads)
 {
     using Example = ExampleAtomic<std::memory_order_relaxed>;
     Example example;
@@ -881,7 +876,7 @@ TEST(Luxtest, atomic_CAS_relaxed_16_threads)
 
 
 
-TEST(Luxtest, atomic_CAS_relaxed_32_threads)
+TEST(ThreadingTest, atomic_CAS_relaxed_32_threads)
 {
     using Example = ExampleAtomic<std::memory_order_relaxed>;
     Example example;
@@ -925,7 +920,7 @@ TEST(Luxtest, atomic_CAS_relaxed_32_threads)
 
 
 
-TEST(Luxtest, atomic_CAS_relaxed_64_threads)
+TEST(ThreadingTest, atomic_CAS_relaxed_64_threads)
 {
     using Example = ExampleAtomic<std::memory_order_relaxed>;
     Example example;
@@ -969,7 +964,7 @@ TEST(Luxtest, atomic_CAS_relaxed_64_threads)
 
 
 
-TEST(Luxtest, PrintTestResults)
+TEST(ThreadingTest, PrintTestResults)
 {
     std::cout << "################ results table ###############" << std::endl;
     for(auto const& r: results)
@@ -985,7 +980,7 @@ TEST(Luxtest, PrintTestResults)
 
 
 
-TEST(Luxtest, results)
+TEST(ThreadingTest, results)
 {
     std::cout << "################ std::mutex Vs atomic(seq_cst) Vs atomic(relaxed) ###############" << std::endl;
     constexpr int RUNs = 6; // 2, 4, 8, 16, 32, 64 threads
@@ -1025,5 +1020,5 @@ TEST(Luxtest, results)
     EXPECT_TRUE(std::get<2>(results[5]) < std::get<2>(results[17]));
 }
 
-} // namespace Luxtest
+} // namespace ThreadingTest
 
