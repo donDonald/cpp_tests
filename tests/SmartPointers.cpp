@@ -111,13 +111,20 @@ TEST(SmartPointers, unique_ptr_with_custom_deleter_as_lambda)
 template <class T>
 struct CustomAllocator {
     typedef T value_type;
+
     CustomAllocator() noexcept {}
-    template <class U> CustomAllocator (const CustomAllocator<U>&) noexcept {
+
+    template <class U> CustomAllocator (const CustomAllocator<U>&) noexcept
+    {
     }
-    T* allocate (std::size_t n) {
+
+    T* allocate (std::size_t n)
+    {
         return reinterpret_cast<T*>( ::operator new(n*sizeof(T)));
     }
-    void deallocate (T* p, std::size_t n) {
+ 
+    void deallocate (T* p, std::size_t n)
+    {
         ::operator delete(p);
     }
 };

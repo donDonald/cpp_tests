@@ -43,7 +43,7 @@ TEST(CtorsDtors, case1_mem_leak)
 {
     using namespace case1;
 
-    // no virtual dtor, create as Base ptr, memory leak!
+    // no virtual dtor, owning as Base ptr, memory leak!
     callStack.clear();
     Base* p = new Derived;
     delete p;
@@ -59,7 +59,7 @@ TEST(CtorsDtors, case1_no_mem_leak)
 {
     using namespace case1;
 
-    // case 1, no virtual dtor, create as Base ptr, memory leak!
+    // no virtual dtor, owning as Derived ptr, no memory leak
     callStack.clear();
     Derived* p = new Derived;
     delete p;
@@ -113,7 +113,7 @@ TEST(CtorsDtors, case2_no_mem_leak)
 {
     using namespace case2;
 
-    // virtual dtor is presenting, create as Base ptr, no memory leak
+    // virtual dtor is presenting, owning as Base ptr, no memory leak
     callStack.clear();
     Base* p = new Derived;
     delete p;
@@ -130,7 +130,7 @@ TEST(CtorsDtors, case2_no_mem_leak2)
 {
     using namespace case2;
 
-    // virtual dtor is presenting, create as Base ptr, no memory leak
+    // virtual dtor is presenting, owning as Base ptr, no memory leak
     callStack.clear();
     Derived* p = new Derived;
     delete p;

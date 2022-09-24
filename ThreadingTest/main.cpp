@@ -81,7 +81,7 @@ TEST(ThreadingTest, mutex_2_threads)
     t2.join();
 
 //  std::cout << "resulting value:" << example.counter_ << std::endl;
-    auto result = std::make_tuple("mutex_2_threads", 2, example.counter_);
+    auto result = std::tuple("mutex_2_threads", 2, example.counter_);
     results.push_back(result);
 }
 
@@ -110,7 +110,7 @@ TEST(ThreadingTest, mutex_4_threads)
     }
 
 //  std::cout << "resulting value:" << example.counter_ << std::endl;
-    auto result = std::make_tuple("mutex_4_threads", 4, example.counter_);
+    auto result = std::tuple("mutex_4_threads", 4, example.counter_);
     results.push_back(result);
 }
 
@@ -139,7 +139,7 @@ TEST(ThreadingTest, mutex_8_threads)
     }
 
 //  std::cout << "resulting value:" << example.counter_ << std::endl;
-    auto result = std::make_tuple("mutex_8_threads", 8, example.counter_);
+    auto result = std::tuple("mutex_8_threads", 8, example.counter_);
     results.push_back(result);
 }
 
@@ -168,7 +168,7 @@ TEST(ThreadingTest, mutex_16_threads)
     }
 
 //  std::cout << "resulting value:" << example.counter_ << std::endl;
-    auto result = std::make_tuple("mutex_16_threads", 16, example.counter_);
+    auto result = std::tuple("mutex_16_threads", 16, example.counter_);
     results.push_back(result);
 }
 
@@ -197,7 +197,7 @@ TEST(ThreadingTest, mutex_32_threads)
     }
 
 //  std::cout << "resulting value:" << example.counter_ << std::endl;
-    auto result = std::make_tuple("mutex_32_threads", 32, example.counter_);
+    auto result = std::tuple("mutex_32_threads", 32, example.counter_);
     results.push_back(result);
 }
 
@@ -226,7 +226,7 @@ TEST(ThreadingTest, mutex_64_threads)
     }
 
 //  std::cout << "resulting value:" << example.counter_ << std::endl;
-    auto result = std::make_tuple("mutex_64_threads", 64, example.counter_);
+    auto result = std::tuple("mutex_64_threads", 64, example.counter_);
     results.push_back(result);
 }
 
@@ -412,7 +412,7 @@ TEST(ThreadingTest, atomic_CAS_seq_cst_2_threads)
         EXPECT_TRUE(v < expected);
     }
 
-    auto result = std::make_tuple("atomic_CAS_seq_cst_2_threads", 2, counter.load());
+    auto result = std::tuple("atomic_CAS_seq_cst_2_threads", 2, counter.load());
     results.push_back(result);
 }
 
@@ -455,7 +455,7 @@ TEST(ThreadingTest, atomic_CAS_seq_cst_4_threads)
         EXPECT_TRUE(v < expected);
     }
 
-    auto result = std::make_tuple("atomic_CAS_seq_cst_4_threads", 4, counter.load());
+    auto result = std::tuple("atomic_CAS_seq_cst_4_threads", 4, counter.load());
     results.push_back(result);
 }
 
@@ -499,7 +499,7 @@ TEST(ThreadingTest, atomic_CAS_seq_cst_8_threads)
         EXPECT_TRUE(v < expected);
     }
 
-    auto result = std::make_tuple("atomic_CAS_seq_cst_8_threads", 8, counter.load());
+    auto result = std::tuple("atomic_CAS_seq_cst_8_threads", 8, counter.load());
     results.push_back(result);
 }
 
@@ -543,7 +543,7 @@ TEST(ThreadingTest, atomic_CAS_seq_cst_16_threads)
         EXPECT_TRUE(v < expected);
     }
 
-    auto result = std::make_tuple("atomic_CAS_seq_cst_16_threads", 16, counter.load());
+    auto result = std::tuple("atomic_CAS_seq_cst_16_threads", 16, counter.load());
     results.push_back(result);
 }
 
@@ -587,7 +587,7 @@ TEST(ThreadingTest, atomic_CAS_seq_cst_32_threads)
         EXPECT_TRUE(v < expected);
     }
 
-    auto result = std::make_tuple("atomic_CAS_seq_cst_32_threads", 32, counter.load());
+    auto result = std::tuple("atomic_CAS_seq_cst_32_threads", 32, counter.load());
     results.push_back(result);
 }
 
@@ -631,7 +631,7 @@ TEST(ThreadingTest, atomic_CAS_seq_cst_64_threads)
         EXPECT_TRUE(v < expected);
     }
 
-    auto result = std::make_tuple("atomic_CAS_seq_cst_64_threads", 64, counter.load());
+    auto result = std::tuple("atomic_CAS_seq_cst_64_threads", 64, counter.load());
     results.push_back(result);
 }
 
@@ -740,7 +740,7 @@ TEST(ThreadingTest, atomic_CAS_relaxed_2_threads)
         EXPECT_TRUE(v < expected);
     }
 
-    auto result = std::make_tuple("atomic_CAS_relaxed_2_threads", 2, counter.load());
+    auto result = std::tuple("atomic_CAS_relaxed_2_threads", 2, counter.load());
     results.push_back(result);
 }
 
@@ -783,7 +783,7 @@ TEST(ThreadingTest, atomic_CAS_relaxed_4_threads)
         EXPECT_TRUE(v < expected);
     }
 
-    auto result = std::make_tuple("atomic_CAS_relaxed_4_threads", 4, counter.load());
+    auto result = std::tuple("atomic_CAS_relaxed_4_threads", 4, counter.load());
     results.push_back(result);
 }
 
@@ -826,7 +826,7 @@ TEST(ThreadingTest, atomic_CAS_relaxed_8_threads)
         EXPECT_TRUE(v < expected);
     }
 
-    auto result = std::make_tuple("atomic_CAS_relaxed_8_threads", 8, counter.load());
+    auto result = std::tuple("atomic_CAS_relaxed_8_threads", 8, counter.load());
     results.push_back(result);
 }
 
@@ -869,7 +869,7 @@ TEST(ThreadingTest, atomic_CAS_relaxed_16_threads)
         EXPECT_TRUE(v < expected);
     }
 
-    auto result = std::make_tuple("atomic_CAS_relaxed_16_threads", 16, counter.load());
+    auto result = std::tuple("atomic_CAS_relaxed_16_threads", 16, counter.load());
     results.push_back(result);
 }
 
@@ -913,7 +913,7 @@ TEST(ThreadingTest, atomic_CAS_relaxed_32_threads)
         EXPECT_TRUE(v < expected);
     }
 
-    auto result = std::make_tuple("atomic_CAS_relaxed_32_threads", 32, counter.load());
+    auto result = std::tuple("atomic_CAS_relaxed_32_threads", 32, counter.load());
     results.push_back(result);
 }
 
@@ -956,7 +956,7 @@ TEST(ThreadingTest, atomic_CAS_relaxed_64_threads)
         EXPECT_TRUE(v < expected);
     }
 
-    auto result = std::make_tuple("atomic_CAS_relaxed_64_threads", 64, counter.load());
+    auto result = std::tuple("atomic_CAS_relaxed_64_threads", 64, counter.load());
     results.push_back(result);
 }
 

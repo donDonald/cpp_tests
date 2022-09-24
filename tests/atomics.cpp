@@ -315,7 +315,6 @@ template<std::memory_order MO>
 struct ExampleAtomic
 {
     std::atomic<bool> exitRequested_;
-    std::mutex mcout_;
 
     std::atomic<Counter> counter1_;
     std::atomic<Counter> counter2_;

@@ -198,17 +198,31 @@ TEST(Cpp17, tuple_tie)
 
 
     {
-        std::cout << "##################################(std::tie(sFirstName, sSecondName, age)):" << std::endl;
+        std::cout << "##################################(std::tie(sFirstName, sSecondName, age), old way):" << std::endl;
         std::string sFirstName;
         std::string sSecondName;
         int age;
-        std::tie(sFirstName, sSecondName, age) = std::make_tuple("Ccc", "Cccccccccccc", 71);
+        std::tie(sFirstName, sSecondName, age) = std::tuple("Ccc", "Cccccccccccc", 71);
         std::cout << "First Name:" << sFirstName << std::endl;
         std::cout << "Second Name Name:" << sSecondName << std::endl;
         std::cout << "Age:" << age << std::endl;
         EXPECT_EQ("Ccc", sFirstName);
         EXPECT_EQ("Cccccccccccc", sSecondName);
         EXPECT_EQ(71, age);
+    }
+
+
+
+
+    {
+        std::cout << "##################################(std::tie(sFirstName, sSecondName, age), Cpp17 way):" << std::endl;
+        auto [sFirstName, sSecondName, age] = std::tuple("Ccc.2", "Cccccccccccc.2", 72);
+        std::cout << "First Name:" << sFirstName << std::endl;
+        std::cout << "Second Name Name:" << sSecondName << std::endl;
+        std::cout << "Age:" << age << std::endl;
+        EXPECT_EQ("Ccc.2", sFirstName);
+        EXPECT_EQ("Cccccccccccc.2", sSecondName);
+        EXPECT_EQ(72, age);
     }
 
 
@@ -222,6 +236,7 @@ TEST(Cpp17, tuple_tie)
         std::string sFirstName;
         std::string sSecondName;
         int age;
+
         std::tie(sFirstName, sSecondName, age) = f(0);
         std::cout << "First Name:" << sFirstName << std::endl;
         std::cout << "Second Name Name:" << sSecondName << std::endl;
@@ -229,9 +244,6 @@ TEST(Cpp17, tuple_tie)
         EXPECT_EQ("Ddd0", sFirstName);
         EXPECT_EQ("Ddddddd0", sSecondName);
         EXPECT_EQ(2+0, age);
-
-
-
 
         std::tie(sFirstName, sSecondName, age) = f(1);
         std::cout << "First Name:" << sFirstName << std::endl;
@@ -357,7 +369,10 @@ TEST(Cpp17, StdStringView)
 
 
 template<typename... Args>
-bool all(Args... args) { return (... && args); }
+bool And(Args... args) { return (... && args); }
+
+template<typename... Args>
+bool Or(Args... args) { return (... || args); }
 
 template<typename ...Args>
 int sum(Args&&... args)
@@ -373,30 +388,46 @@ TEST(Cpp17, FoldExpression)
 
 //  {
 //      template<typename... Args>
-//      bool all(Args... args) { return (... && args); }
+//      bool And(Args... args) { return (... && args); }
 //       
-//      bool b = all(true, true, true, false);
-//       // within all(), the unary left fold expands as
+//      bool b = And(true, true, true, false);
+//       // within And(), the unary left fold expands as
 //       //  return ((true && true) && true) && false;
 //       // b is false
 //      }
 //  }
 
+    {
+        bool result = And(true);
+        EXPECT_EQ(true, result);
+
+        result = And(false);
+        EXPECT_EQ(false, result);
+
+        result = And(true, true);
+        EXPECT_EQ(true, result);
+
+        result = And(true, false);
+        EXPECT_EQ(false, result);
+
+        result = And(false, false);
+        EXPECT_EQ(false, result);
+    }
 
     {
-        bool result = all(true);
+        bool result = Or(true);
         EXPECT_EQ(true, result);
 
-        result = all(false);
+        result = Or(false);
         EXPECT_EQ(false, result);
 
-        result = all(true, true);
+        result = Or(true, true);
         EXPECT_EQ(true, result);
 
-        result = all(true, false);
-        EXPECT_EQ(false, result);
+        result = Or(true, false);
+        EXPECT_EQ(true, result);
 
-        result = all(false, false);
+        result = Or(false, false);
         EXPECT_EQ(false, result);
     }
 
