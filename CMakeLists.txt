@@ -5,7 +5,7 @@ add_subdirectory(BTree)
 add_subdirectory(FalseSharing)
 add_subdirectory(HashMap)
 add_subdirectory(ThreadingTest)
-add_subdirectory(provider_supplier)
+add_subdirectory(provider_consumer)
 add_subdirectory(square_solver)
 add_subdirectory(tests)
 
