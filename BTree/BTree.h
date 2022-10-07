@@ -1,3 +1,5 @@
+#pragma once
+
 #include <memory>
 #include <cassert>
 #include <iostream>
@@ -10,7 +12,9 @@ class BTree
     bool _isSet; 
     Key _key;
     Value _value;
-    std::unique_ptr<BTree> _left, _right;
+    BTree* _left;
+    BTree* _right;
+
 public:
 
     BTree()
@@ -50,36 +54,36 @@ public:
     const Value* find(const Key& key) const
     {
         auto result = _find(key);
-        return result.first == nullptr ? nullptr : &result.first->_value;
+        return result == nullptr ? nullptr : &result->_value;
     }
 
     Value* find(const Key& key)
     {
         auto result = _find(key);
-        return result.first == nullptr ? nullptr : &result.first->_value;
+        return result == nullptr ? nullptr : &result->_value;
     }
 
     const Value& at(const Key& key) const
     {
         auto result = _find(key);
-        assert(result.first);
-        return result.first->_value;
+        assert(result);
+        return result->_value;
     }
 
     Value& at(const Key& key)
     {
         auto result = _find(key);
-        assert(result.first);
-        return result.first->_value;
+        assert(result);
+        return result->_value;
     }
 
     void insert(const Key& key, const Value& value)
     {
         auto result = _find(key);
-        if (result.first) {
-            result.first->_key = key;
-            result.first->_value = value;
-            result.first->_isSet = true;
+        if (result) {
+            result->_key = key;
+            result->_value = value;
+            result->_isSet = true;
         } else {
             BTree node(key, value);
             _insert(node);
@@ -88,95 +92,59 @@ public:
 
     void remove(const Key& key)
     {
-//std::cout << "0_remove, key:" << key << std::endl;
-        auto result = _find(key);
-        auto node = result.first;
-        auto parent = result.second;
-//std::cout << "1_remove, key:" << key << std::endl;
-        if (node) {
-//std::cout << "2_remove, key:" << key << std::endl;
-            if (parent) {
-//std::cout << "3_remove, key:" << key << std::endl;
-                auto left = std::move(node->_left);
-                auto right = std::move(node->_right);
-
-//std::cout << "4_remove, key:" << key << ", parent->key:" << parent->_key << std::endl;
-                // Find myself, node to be removed
-                if(key < parent->_key) {
-                    // I'm on left side
-//std::cout << "5_left_remove, key:" << key << std::endl;
-                    parent->_left.reset();
-                } else {
-                    // I'm on right side
-//std::cout << "5_right_remove, key:" << key << std::endl;
-                    parent->_right.reset();
-                }
-
-                // Insert left and right of the TBR node into it's parent 
-                if(left) parent->_insert(*left);
-                if(right) parent->_insert(*right);
-            } else {
-                _isSet = false;
-            }
-        }
+        _remove(this, key);
     }
 
+	void inorder(BTree* node)
+	{
+	    if (node!= nullptr) {
+	        inorder(node->_left);
+	        std::cout << node->_key <<" ";
+	        inorder(node->_right);
+	    }
+	}
 private:
 
-    mutable const BTree* _cparent;
-    std::pair<const BTree*, const BTree*> _find(const Key& key) const
+    const BTree* _find(const Key& key) const
     {
-//std::cout << "_find() const" << std::endl;
         if (_isSet && _key == key) {
-            std::pair<const BTree*, const BTree*> result {this, _cparent};
-            _cparent = nullptr;
-            return result;
+            return this;
         } else if (key < _key && _left) {
-            _cparent = this;
             return _left->_find(key);
         } else if (key > _key && _right){
-            _cparent = this;
             return _right->_find(key);
         }
-        _cparent = nullptr;
-        return std::make_pair<const BTree*, const BTree*>(nullptr, nullptr);
+        return nullptr;
     }
 
-    std::pair<BTree*, BTree*> _find(const Key& key)
+    BTree* _find(const Key& key)
     {
         static BTree* _parent = nullptr;
-//std::cout << "_0find(), parent:" << _parent << std::endl;
         if (_isSet && _key == key) {
-//std::cout << "_1find(), parent:" << _parent << std::endl;
-            std::pair<BTree*, BTree*> result {this, _parent};
             _parent = nullptr;
-            return result;
+            return this;
         } else if (key < _key && _left) {
             _parent = this;
-//std::cout << "_2find(), parent:" << _parent << std::endl;
             return _left->_find(key);
         } else if (key > _key && _right){
             _parent = this;
-//std::cout << "_3find(), parent:" << _parent << std::endl;
             return _right->_find(key);
         }
         _parent = nullptr;
-//std::cout << "_4find(), parent:" << _parent << std::endl;
-        return std::make_pair<BTree*, BTree*>(nullptr, nullptr);
+        return nullptr;
     }
 
     void _insert(BTree& node)
     {
-//std::cout << "_insert()" << std::endl;
         if (_isSet) {
             if(_key == node._key) {
                 _key = node._key;
                 _value = node._value;
             } else if (node._key < _key) {
-                if (!_left) _left = std::make_unique<BTree>();
+                if (!_left) _left = new BTree;
                 _left->_insert(node);
             } else {
-                if (!_right) _right = std::make_unique<BTree>();
+                if (!_right) _right = new BTree;
                 _right->_insert(node);
             }
         } else {
@@ -184,6 +152,77 @@ private:
             _value = node._value;
             _isSet = true;
         }
+    }
+
+    BTree* _remove(BTree* node, const Key& key)
+    {
+        if (node == nullptr)
+            return node;
+
+        if(key < node->_key)
+        {
+            BTree* tmp = _remove(node->_left, key);
+            node->_left = tmp;
+        }
+        else if(key > node->_key)
+        {
+            BTree* tmp = _remove(node->_right, key);
+            node->_right = tmp;
+        }
+        else
+        {
+            // It's a leaf node
+            if(node->_left == nullptr && node->_right == nullptr)
+            {
+                node->_isSet = false;
+                node->_key = Key();
+                node->_value = Value();
+                return nullptr;
+            }
+            else if(node->_left == nullptr)
+            {
+                BTree* tmp = node->_right;
+                node->_isSet = tmp->_isSet;
+                node->_left = tmp->_left;
+                node->_right = tmp->_right;
+                node->_key = tmp->_key;
+                node->_value = tmp->_value;
+                delete tmp;
+                return node;
+            }
+            else if(node->_right == nullptr)
+            {
+                BTree* tmp = node->_left;
+                node->_isSet = tmp->_isSet;
+                node->_left = tmp->_left;
+                node->_right = tmp->_right;
+                node->_key = tmp->_key;
+                node->_value = tmp->_value;
+                delete tmp;
+                return node;
+            }
+
+            // node with two children: Get the inorder successor
+            // (smallest in the right subtree)
+            BTree* tmp = minValueNode(node->_right);
+            // Copy the inorder successor's content to this node
+            node->_key = tmp->_key;
+
+            // Delete the inorder successor
+            node->_right = _remove(node->_right, tmp->_key);
+        }
+        return node;
+    }
+
+    BTree* minValueNode(BTree* node)
+    {
+        BTree* current = node;
+
+        /* loop down to find the leftmost leaf */
+        while (current && current->_left != nullptr)
+            current = current->_left;
+
+        return current;
     }
 
 };
