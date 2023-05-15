@@ -1,341 +1,294 @@
-#ifndef c5fed941e2a9bbc7075a9f3e4ba9fc8b
-#define c5fed941e2a9bbc7075a9f3e4ba9fc8b
+#pragma once
 
 // Custom durty MFC-like hash map
-// g++ -lstdc++ -pthread HashMap.cpp
-#include <iostream>
-#include <future>
-#include <cassert>
-#include <chrono>
+#include <unordered_map>
 
-#include <vector>
-#include <thread>
-#include <future>
-#include <numeric>
-#include <iostream>
-#include <chrono>
-#include <functional>
-
-//  {
-//      Value* _values;
-
-//  }
-
-template<class Key, class Value>
+template<class Key, class Value, class HashFoo=std::hash<Key>>
 class HashMap
 {
-    size_t _maxSize;
-    Key* _keys;
-    std::size_t _keysSize;
-    Value* _values;
-    std::size_t _valuesSize;
+public:
+    class Bucket
+    {
+    public:
+        struct Record
+        {
+            Key _key;
+            Value _value;
+        };
+
+        static constexpr int BUCKET_SIZE = 16;
+        size_t _maxSize;
+        size_t _size;
+        Record* _records;
+
+    public:
+        Bucket(size_t maxSize = BUCKET_SIZE)
+            : _maxSize(0)
+            , _size(0)
+            , _records(nullptr)
+        {
+            reserve(maxSize);
+        }
+
+        ~Bucket()
+        {
+            delete [] _records;
+            _records = nullptr;
+        }
+
+        size_t size() const
+        {
+            return _size;
+        }
+
+        void reserve(size_t maxSize)
+        {
+            assert(maxSize > _maxSize);
+            Record* records = new Record[maxSize];
+            assert(records);
+            for(size_t i=0; i<_size; i++)
+            {
+                records[i] = _records[i];
+            }
+            _maxSize = maxSize;
+            delete [] _records;
+            _records = records;
+        }
+
+        Value* find(const Key& key)
+        {
+            for(size_t i=0; i<_size; ++i)
+            {
+                if(_records[i]._key == key)
+                {
+                    return &_records[i]._value;
+                }
+            }
+            return nullptr;
+        }
+
+        const Value* find(const Key& key) const
+        {
+            for(size_t i=0; i<_size; ++i)
+            {
+                if(_records[i]._key == key)
+                {
+                    return &_records[i]._value;
+                }
+            }
+            return nullptr;
+        }
+
+        Value& operator [](const Key& key)
+        {
+            Value* value = find(key);
+            assert(value);
+            return *value;
+        }
+
+        const Value& operator [](const Key& key) const
+        {
+            const Value* value = find(key);
+            assert(value);
+            return *value;
+        }
+
+        bool exists(const Key& key) const
+        {
+            const Value* value = find(key);
+            return value != nullptr;
+        }
+
+        Value* insert(const Key& key, const Value& value)
+        {
+            Value* newValue = nullptr;
+            for(size_t i=0; i<_size; ++i)
+            {
+                if(_records[i]._key == key)
+                {
+                    _records[i]._value = value;
+                    newValue = &_records[i]._value;
+                }
+            }
+
+            if(!newValue)
+            {
+                if(_size == _maxSize)
+                {
+                    reserve(_maxSize + BUCKET_SIZE);
+                }
+                _records[_size]._key = key;
+                _records[_size]._value = value;
+                newValue = &_records[_size]._value;
+                ++_size;
+            }
+            return newValue;
+        }
+
+        bool remove(const Key& key)
+        {
+            for(size_t i=0; i<_size; ++i)
+            {
+                if(_records[i]._key == key)
+                {
+                    Key k = _records[i]._key;
+                    Value v = _records[i]._value;
+                    k.~Key();
+                    v.~Value();
+                    if(i<(_size-1))
+                    {
+                        // move tail-most pair to just removed pair
+                        _records[i]._key = _records[_size-1]._key;
+                        _records[i]._value = _records[_size-1]._value;
+                        _records[_size-1]._key.~Key();
+                        _records[_size-1]._value.~Value();
+                    }
+                    --_size;
+                    return true;
+                }
+            }
+            return false;
+        }
+
+    };
 
     using HashType = std::size_t;
+    size_t   _maxSize;
+    size_t   _size;
+    Bucket** _buckets;
 
 public:
-    HashMap(size_t maxSize)
-        : _maxSize(maxSize)
-        , _keys(nullptr)
-        , _keysSize(0)
-        , _values(nullptr)
-        , _valuesSize(0)
+    HashMap(size_t maxSize = 16)
+        : _maxSize(0)
+        , _size(0)
+        , _buckets(nullptr)
     {
-        void* rawKeys = calloc(_maxSize, sizeof(Key*));
-        assert(rawKeys);
-        _keys = (Key*)(rawKeys);
-
-        void* rawValues = calloc(_maxSize, sizeof(Value*));
-        assert(rawValues);
-        _values = (Value*)(rawValues);
+        reserve(maxSize);
     }
 
     ~HashMap()
     {
-        if (_keys)
+        for(size_t i=0; i<_maxSize; i++)
         {
-//          for(int i = 0; i < _maxSize; ++i)
-//          {
-//              // Free every value here explicitly with delete
-//              Key* value = _keys[i];
-//              Key* value = _keys[i];
-//              if(value != nullptr)
-//              {
-//                  delete value;
-//                  _keys[i] = nullptr;
-//              }
-//          }
-            free(_keys);
-            _keys = nullptr;
+            Bucket* b = _buckets[i];
+            if(b)
+            {
+                b->~Bucket();
+                delete b;
+                _buckets[i] = nullptr;
+            }
         }
-        if (_values)
+        free(_buckets);
+        _buckets = nullptr;
+    }
+
+    size_t size() const
+    {
+        size_t s = 0;
+        for(size_t i=0; i<_maxSize; i++)
         {
-            free(_values);
-            _values = nullptr;
+            Bucket* b = _buckets[i];
+            if(b)
+            {
+                s += b->size();
+            }
         }
+        return s;
     }
 
     void reserve(size_t maxSize)
     {
-//      if (maxSize > _maxSize)
-//      {
-//          std::cout << "HashMap::reserve()" << std::endl;
-//          std::cout << "        Allocatng, new maxSize" << maxSize << ", old maxSize:" << _maxSize << std::endl;
-//          Key* keys = new Key[maxSize];
-//          memcpy(keys, _keys, _maxSize*sizeof(Key));
-//          delete _keys;
-//          _keys = keys;;
-//      }
-//      else if (maxSize < _maxSize)
-//      {
-//          std::cout << "        dropping, new maxSize" << maxSize << ", old maxSize:" << _maxSize << std::endl;
-//          Key* keys = new Key[maxSize];
-//          memcpy(keys, _keys, _maxSize*sizeof(Key));
-//          delete _keys;
-//          _keys = keys;;
-//      }
-//      else
-//      {
-//          // Nothing to do here
-//      }
-     }
-
-    size_t size() const
-    {
-        assert(_keysSize == _valuesSize);
-        std::cout << "HashMap::size():" << _keysSize << std::endl;
-        return _keysSize;
+        assert(maxSize > _maxSize);
+        Bucket** buckets = (Bucket**)std::realloc(_buckets, maxSize*sizeof(Bucket*));
+        assert(buckets);
+        if(_size == 0)
+        {
+            memset(buckets, 0, maxSize*sizeof(Bucket*));
+        }
+        else
+        {
+            memset(_buckets + _size*sizeof(void*), 0, maxSize - _size);
+        }
+        _maxSize = maxSize;
+        _buckets = buckets;
     }
 
-    size_t maxSize() const
+    Value* find(const Key& key)
     {
-        std::cout << "HashMap::maxSize():" <<  _maxSize << std::endl;
-        return _maxSize;
+        size_t index = indexFoo(key);
+//        std::cout << "find(), key:" << (int)key << ", index:" << index << std::endl;
+        Bucket* b = _buckets[index];
+        Value* v = nullptr;
+        if(b)
+        {
+            v = b->find(key);
+        }
+        return v;
     }
 
     const Value* find(const Key& key) const
     {
-        std::size_t i = indexFoo(key);
-
+        size_t index = indexFoo(key);
+//        std::cout << "find(), key:" << (int)key << ", index:" << index << std::endl;
+        Bucket* b = _buckets[index];
+        Value* v = nullptr;
+        if(b)
+        {
+            v = b->find(key);
+        }
+        return v;
     }
 
-    bool keyExists(const Key& key) const
+    Value& operator [](const Key& key)
+    {
+        Value* value = find(key);
+        assert(value);
+        return *value;
+    }
+
+    const Value& operator [](const Key& key) const
+    {
+        const Value* value = find(key);
+        assert(value);
+        return *value;
+    }
+
+    bool exists(const Key& key) const
     {
         const Value* value = find(key);
         return value != nullptr;
     }
 
-    void insert(const Key& key, const Value& value)
+    Value* insert(const Key& key, const Value& value)
     {
-        std::size_t i = indexFoo(key);
-//      Key* pK = _keys;
-//      Value* pV = _values;
-//      assert(pK == nullptr);
-//      assert(pV == nullptr);
-        Key k = _keys[i];
-        Value v = _values[i];
-        k = key;
-        v = value;
-        ++_keysSize;
-        ++_valuesSize;
-        assert(_keysSize == _valuesSize);
-    }
-
-public:
-    static HashType hashFoo(const Key& key)
-    {
-        auto hash = std::hash<Key>{}(key);
-        std::cout << "HashMap::hashFoo(), hash:" << hash << std::endl;
-        return hash;
-    } 
-
-    static std::size_t indexFoo(const Key& key)
-    {
-        HashType h = hashFoo(key);
-        std::size_t index = h;
-        std::cout << "HashMap::indexFoo(), index:" << index << std::endl;
-        return index;
-    } 
-
-    //std::size_t normalize(std::size_t )
-
-};
-
-#if 0
-class HumanBeing
-{
-    std::string _name;
-public:
-    HumanBeing()
-        : _name("undefined")
-    {
-    }
-
-    HumanBeing(const std::string& name)
-        : _name(name)
-    {
-    }
-
-    HumanBeing(const HumanBeing& other)
-    {
-        _name = other._name;
-    }
-
-    HumanBeing& operator=(const HumanBeing& other)
-    {
-        if (this != &other)
+        size_t index = indexFoo(key);
+//        std::cout << "insert(), key:" << (int)key << ", index:" << index << std::endl;
+        Bucket* b = _buckets[index];
+        Value* v = nullptr;
+        if(!b)
         {
-            _name = other._name;
+            b = new Bucket();
+            _buckets[index] = b;
         }
-        return *this;
+        v = b->insert(key, value);
+        return v;
     }
 
-    const std::string name() const
+    bool remove(const Key& key)
     {
-        return _name;
+        size_t index = indexFoo(key);
+//        std::cout << "remove(), key:" << (int)key << ", index:" << index << std::endl;
+        Bucket* b = _buckets[index];
+        bool r = false;
+        if(b)
+        {
+            r = b->remove(key);
+        }
+        return r;
     }
+
+    std::size_t indexFoo(const Key& key) const
+    {
+        return HashFoo{}(key) % _maxSize;
+    } 
 };
-
-int main()
-{
-    {
-        std::cout << "################## Test 1, bool HashMap::keyExists(const Key& key) const" << std::endl;
-        //HashMap<uint8_t, uint32_t> haaash(100);
-        HashMap<uint8_t, HumanBeing> haaash(100);
-        assert(haaash.maxSize() == 100);
-
-        assert(haaash.size() == 0);
-        bool exists = haaash.keyExists(0);
-        assert(exists == false);
-
-        haaash.insert(0, HumanBeing("0000000000"));
-        assert(haaash.size() == 1);
-
-
-
-
-
-//      haaash.reserve(1000);
-//      assert(haaash.size() == 0);
-
-//      bool exists = haaash.keyExists(0);
-//      assert(exists == false);
-
-
-//      haaash.insert(0, "0000000000");
-//      exists = haaash.keyExists(0);
-//      assert(exists == true);
-
-
-//      haaash.insert(1, "1111111111");
-//      exists = haaash.keyExists(1);
-//      assert(exists == true);
-
-
-//      haaash.insert(2, "2222222222");
-//      exists = haaash.keyExists(2);
-//      assert(exists == true);
-
-
-//      haaash.insert(3, "3333333333");
-//      exists = haaash.keyExists(3);
-//      assert(exists == true);
-
-
-//      haaash.insert(9, "9999999999");
-//      exists = haaash.keyExists(9);
-//      assert(exists == true);
-
-
-//      haaash.insert(4, "4444444444");
-//      exists = haaash.keyExists(4);
-//      assert(exists == true);
-
-
-//      haaash.insert(8, "8888888888");
-//      exists = haaash.keyExists(8);
-//      assert(exists == true);
-
-
-//      haaash.insert(5, "5555555555");
-//      exists = haaash.keyExists(5);
-//      assert(exists == true);
-    }
-
-//  {
-//      std::cout << "################## Value* find(const Key& key) const " << std::endl;
-//      HashMap<uint32_t, std::string> haaash;
-
-//      auto pStr = haaash.find(0);
-//      assert(!pStr);
-
-//      haaash.insert(0, "0");
-//      pStr = haaash.find(0);
-//      assert(pStr);
-//      assert(*pStr == "0");
-
-//      haaash.insert(1, "1");
-//      pStr = haaash.find(1);
-//      assert(pStr);
-//      assert(*pStr == "1");
-
-//      pStr = haaash.find(100);
-//      assert(!pStr);
-
-//      haaash.insert(100, "100");
-//      pStr = haaash.find(100);
-//      assert(pStr);
-//      assert(*pStr == "100");
-
-//      haaash.insert(20, "20");
-//      pStr = haaash.find(20);
-//      assert(pStr);
-//      assert(*pStr == "20");
-
-//      haaash.insert(17, "17");
-//      pStr = haaash.find(17);
-//      assert(pStr);
-//      assert(*pStr == "17");
-
-//      haaash.insert(48, "48");
-//      pStr = haaash.find(48);
-//      assert(pStr);
-//      assert(*pStr == "48");
-
-//      haaash.insert(56, "56");
-//      pStr = haaash.find(56);
-//      assert(pStr);
-//      assert(*pStr == "56");
-
-//      haaash.insert(45, "45");
-//      pStr = haaash.find(45);
-//      assert(pStr);
-//      assert(*pStr == "45");
-
-//      haaash.insert(38, "38");
-//      pStr = haaash.find(38);
-//      assert(pStr);
-//      assert(*pStr == "38");
-//  }
-
-//  {
-//      std::cout << "################## Coooooolll" << std::endl;
-//      HashMap<uint32_t, std::string> haaash;
-
-//      constexpr int values[] = {86,7, 2, 24, 4, 3, 28, 4, 89, 4, 6, 64, 44, 5, 16, 7, 44, 83, 33};
-//      for(int key : values) {
-//          haaash.insert(key, "yeee:" + key);
-//      }
-
-//      auto pStr = haaash.find(89);
-//      assert(pStr);
-//      assert(*pStr == "yeee:"+89);
-
-//      pStr = haaash.find(98);
-//      assert(!pStr);
-//  }
-
-    return 0;
-}
-#endif // 0
-
-#endif // c5fed941e2a9bbc7075a9f3e4ba9fc8b
