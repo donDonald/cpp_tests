@@ -4,7 +4,7 @@
 
 std::vector<std::tuple<std::string, int, int>> results;
 
-void work(int steps, std::atomic<int>& a)
+void work(int steps, int& a)
 {
     for(int i = 0; i < steps; ++i)
     {
@@ -12,85 +12,120 @@ void work(int steps, std::atomic<int>& a)
     }
 }
 
-
-
-
-void falseSharing(int steps)
+namespace false_sharing
 {
-    std::atomic<int> a{0};
-    std::atomic<int> b{0};
-    std::atomic<int> c{0};
-    std::atomic<int> d{0};
 
-//  std::cout << "Address of atomic<int> a - " << &a << std::endl;
-//  std::cout << "Address of atomic<int> b - " << &b << std::endl;
-//  std::cout << "Address of atomic<int> c - " << &c << std::endl;
-//  std::cout << "Address of atomic<int> d - " << &d << std::endl;
+    // These integers are located on the same cache line therefore leading to false sharing
+    struct Values
+    {
+        Values()
+        {
+            memset(this, 0, sizeof(Values));
+        }
+        int a[256]; // Up to 256 threads
+    };
 
-    // Four threads each with their own atomic<int>
-    std::thread t1( [&]() {work(steps, a);} );
-    std::thread t2( [&]() {work(steps, b);} );
-    std::thread t3( [&]() {work(steps, c);} );
-    std::thread t4( [&]() {work(steps, d);} );
+    void test(int threadsCount, int steps)
+    {
 
-    // Join the 4 threads
-    t1.join();
-    t2.join();
-    t3.join();
-    t4.join();
-}
+        std::vector<std::thread> threads;
+        Values values;
+
+        for(int i=0; i<threadsCount; i++)
+        {
+            std::cout << "Address of values.a[" << i << "] - " << &values.a[i] << std::endl;
+            std::cout << "Initial values.a[" << i << "] - " << values.a[i] << std::endl;
+        }
+
+        for(int i=0; i<threadsCount; i++)
+        {
+            int& a = values.a[i];
+            std::thread t( [&]() {work(steps, a);} );
+            threads.push_back(std::move(t));
+        }
+
+        // Join all threads
+        for(int i=0; i<threadsCount; i++)
+        {
+            threads[i].join();
+        }
+
+        for(int i=0; i<threadsCount; i++)
+        {
+            std::cout << "Resulting values.a[" << i << "] - " << values.a[i] << std::endl;
+            ASSERT_TRUE(values.a[i] == steps);
+        }
+    }
+
+}; // namespace false_sharing
 
 
-
-
-//struct alignas(64) AlignedType {
-//    AlignedType() { val = 0; }
-//    std::atomic<int> val;
-//};
-
-struct AlignedValues
+namespace no_false_sharing
 {
-    std::atomic<int> a{0};
-    char a_padding[64];
-    std::atomic<int> b{0};
-    char b_padding[64];
-    std::atomic<int> c{0};
-    char c_padding[64];
-    std::atomic<int> d{0};
-};
 
-void falseSharingFixed(int steps)
-{
-    // Create few atomic integers
     // These integers are split by a padding meant to move integers to different cache lines
-    AlignedValues values;
+    struct Values
+    {
+        Values()
+        {
+            memset(this, 0, sizeof(Values));
+        }
 
-//  std::cout << "Address of atomic<int> a - " << &values.a << std::endl;
-//  std::cout << "Address of atomic<int> b - " << &values.b << std::endl;
-//  std::cout << "Address of atomic<int> c - " << &values.c << std::endl;
-//  std::cout << "Address of atomic<int> d - " << &values.d << std::endl;
+        struct V
+        {
+            operator int&()
+            {
+                return a;
+            }
+            int a;
+            char padding[64];
+        };
 
-    // Four threads each with their own atomic<int>
-    std::thread t1( [&]() {work(steps, values.a);} );
-    std::thread t2( [&]() {work(steps, values.b);} );
-    std::thread t3( [&]() {work(steps, values.c);} );
-    std::thread t4( [&]() {work(steps, values.d);} );
+        V a[256]; // Up to 256 threads
+    };
 
-    // Join the 4 threads
-    t1.join();
-    t2.join();
-    t3.join();
-    t4.join();
-}
+    void test(int threadsCount, int steps)
+    {
+        std::vector<std::thread> threads;
+        Values values;
+
+        for(int i=0; i<threadsCount; ++i)
+        {
+            std::cout << "Address of values.a[" << i << "] - " << &values.a[i] << std::endl;
+            std::cout << "Initial values.a[" << i << "] - " << values.a[i] << std::endl;
+        }
+
+        for(int i=0; i<threadsCount; ++i)
+        {
+            int& a = values.a[i];
+            std::thread t( [&]() {work(steps, a);} );
+            threads.push_back(std::move(t));
+        }
+
+        // Join all threads
+        for(int i=0; i<threadsCount; ++i)
+        {
+            threads[i].join();
+        }
+
+        for(int i=0; i<threadsCount; i++)
+        {
+            std::cout << "Resulting values.a[" << i << "] - " << values.a[i] << std::endl;
+            ASSERT_TRUE(values.a[i] == steps);
+        }
+    }
+
+}; // namespace no_false_sharing
 
 
 
 
 TEST(FalseSharing, 10000000_iterations)
 {
+    const auto threadsCount = std::thread::hardware_concurrency();
     const int steps = 10'000'000;
     auto ts1 = std::chrono::system_clock::now();
-    falseSharing(steps);
+    false_sharing::test(threadsCount, steps);
     auto ts2 = std::chrono::system_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(ts2 - ts1).count();
     std::cout << steps << " iterations, elapsed(ms):" << elapsed <<  std::endl;
@@ -101,11 +136,12 @@ TEST(FalseSharing, 10000000_iterations)
 
 
 
-TEST(FalseSharing, fixed_10000000_iterations)
+TEST(FalseSharing, 10000000_iterations_fixed)
 {
+    const auto threadsCount = std::thread::hardware_concurrency();
     const int steps = 10'000'000;
     auto ts1 = std::chrono::system_clock::now();
-    falseSharingFixed(steps);
+    no_false_sharing::test(threadsCount, steps);
     auto ts2 = std::chrono::system_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(ts2 - ts1).count();
     std::cout << steps << " iterations, elapsed(ms):" << elapsed <<  std::endl;
@@ -118,9 +154,10 @@ TEST(FalseSharing, fixed_10000000_iterations)
 
 TEST(FalseSharing, 100000000_iterations)
 {
+    const auto threadsCount = std::thread::hardware_concurrency();
     const int steps = 100'000'000;
     auto ts1 = std::chrono::system_clock::now();
-    falseSharing(steps);
+    false_sharing::test(threadsCount, steps);
     auto ts2 = std::chrono::system_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(ts2 - ts1).count();
     std::cout << steps << " iterations, elapsed(ms):" << elapsed <<  std::endl;
@@ -131,11 +168,12 @@ TEST(FalseSharing, 100000000_iterations)
 
 
 
-TEST(FalseSharing, fixed_100000000_iterations)
+TEST(FalseSharing, 100000000_iterations_fixed)
 {
+    const auto threadsCount = std::thread::hardware_concurrency();
     const int steps = 100'000'000;
     auto ts1 = std::chrono::system_clock::now();
-    falseSharingFixed(steps);
+    no_false_sharing::test(threadsCount, steps);
     auto ts2 = std::chrono::system_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(ts2 - ts1).count();
     std::cout << steps << " iterations, elapsed(ms):" << elapsed <<  std::endl;
