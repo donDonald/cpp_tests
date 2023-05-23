@@ -6,30 +6,30 @@
 #include <chrono>
 #include <iostream>
 
-namespace ThreadingTest
-{
-
 using Counter = uint32_t;
 
 // Time to run tests for multhi-threading cases
 constexpr auto TIME_TO_RUN = std::chrono::milliseconds(5000);
 
 // Collection of results fr test runs: "description", threads count, counter value (kinda performance)
-std::vector<std::tuple<std::string, int, Counter>> results;
+std::vector<std::tuple<std::string, unsigned int, Counter>> results;
 
 
 
 
 ///////////////////////// Simply using std::mutex to protect that counter and do things people usually do
 
-struct ExampleMutex
+namespace mutex
+{
+
+struct Test
 {
 private:
-    std::atomic<bool> exitRequested_;
+    bool exitRequested_;
     std::mutex m_;
 
 public:
-    ExampleMutex()
+    Test()
         : counter_(0)
         , exitRequested_(false)
     {}
@@ -64,190 +64,29 @@ public:
     }
 };
 
-
-
-
-TEST(ThreadingTest, mutex_2_threads)
-{
-    using Example = ExampleMutex;
-    Example example;
-
-    std::thread t1(&Example::A, &example);
-    std::thread t2(&Example::B, &example);
-    std::this_thread::sleep_for(TIME_TO_RUN);
-    example.quit();
-
-    t1.join();
-    t2.join();
-
-//  std::cout << "resulting value:" << example.counter_ << std::endl;
-    auto result = std::tuple("mutex_2_threads", 2, example.counter_);
-    results.push_back(result);
-}
-
-
-
-
-TEST(ThreadingTest, mutex_4_threads)
-{
-    using Example = ExampleMutex;
-    Example example;
-    std::vector<std::thread> threads; 
-
-    for(int i=0; i<2;++i)
-    {
-        std::thread t1(&Example::A, &example);
-        threads.push_back(std::move(t1));
-        std::thread t2(&Example::B, &example);
-        threads.push_back(std::move(t2));
-    }
-    std::this_thread::sleep_for(TIME_TO_RUN);
-    example.quit();
-
-    for(auto& t: threads)
-    {
-        t.join();
-    }
-
-//  std::cout << "resulting value:" << example.counter_ << std::endl;
-    auto result = std::tuple("mutex_4_threads", 4, example.counter_);
-    results.push_back(result);
-}
-
-
-
-
-TEST(ThreadingTest, mutex_8_threads)
-{
-    using Example = ExampleMutex;
-    Example example;
-    std::vector<std::thread> threads; 
-
-    for(int i=0; i<4;++i)
-    {
-        std::thread t1(&Example::A, &example);
-        threads.push_back(std::move(t1));
-        std::thread t2(&Example::B, &example);
-        threads.push_back(std::move(t2));
-    }
-    std::this_thread::sleep_for(TIME_TO_RUN);
-    example.quit();
-
-    for(auto& t: threads)
-    {
-        t.join();
-    }
-
-//  std::cout << "resulting value:" << example.counter_ << std::endl;
-    auto result = std::tuple("mutex_8_threads", 8, example.counter_);
-    results.push_back(result);
-}
-
-
-
-
-TEST(ThreadingTest, mutex_16_threads)
-{
-    using Example = ExampleMutex;
-    Example example;
-    std::vector<std::thread> threads; 
-
-    for(int i=0; i<8;++i)
-    {
-        std::thread t1(&Example::A, &example);
-        threads.push_back(std::move(t1));
-        std::thread t2(&Example::B, &example);
-        threads.push_back(std::move(t2));
-    }
-    std::this_thread::sleep_for(TIME_TO_RUN);
-    example.quit();
-
-    for(auto& t: threads)
-    {
-        t.join();
-    }
-
-//  std::cout << "resulting value:" << example.counter_ << std::endl;
-    auto result = std::tuple("mutex_16_threads", 16, example.counter_);
-    results.push_back(result);
-}
-
-
-
-
-TEST(ThreadingTest, mutex_32_threads)
-{
-    using Example = ExampleMutex;
-    Example example;
-    std::vector<std::thread> threads; 
-
-    for(int i=0; i<16;++i)
-    {
-        std::thread t1(&Example::A, &example);
-        threads.push_back(std::move(t1));
-        std::thread t2(&Example::B, &example);
-        threads.push_back(std::move(t2));
-    }
-    std::this_thread::sleep_for(TIME_TO_RUN);
-    example.quit();
-
-    for(auto& t: threads)
-    {
-        t.join();
-    }
-
-//  std::cout << "resulting value:" << example.counter_ << std::endl;
-    auto result = std::tuple("mutex_32_threads", 32, example.counter_);
-    results.push_back(result);
-}
-
-
-
-
-TEST(ThreadingTest, mutex_64_threads)
-{
-    using Example = ExampleMutex;
-    Example example;
-    std::vector<std::thread> threads; 
-
-    for(int i=0; i<32;++i)
-    {
-        std::thread t1(&ExampleMutex::A, &example);
-        threads.push_back(std::move(t1));
-        std::thread t2(&ExampleMutex::B, &example);
-        threads.push_back(std::move(t2));
-    }
-    std::this_thread::sleep_for(TIME_TO_RUN);
-    example.quit();
-
-    for(auto& t: threads)
-    {
-        t.join();
-    }
-
-//  std::cout << "resulting value:" << example.counter_ << std::endl;
-    auto result = std::tuple("mutex_64_threads", 64, example.counter_);
-    results.push_back(result);
-}
+}; // namespace mutex
 
 
 
 
 ///////////////////////// Using Compare-And-Swap provided by std::atomic::compare_exchange_weak
 
+namespace atomic
+{
+
 template<std::memory_order MO>
-struct ExampleAtomic
+struct Test
 {
 private:
-    std::atomic<bool> exitRequested_;
+    bool exitRequested_;
 //  std::mutex coutMutex_;
 
 public:
-    ExampleAtomic()
+    Test()
         : exitRequested_(false)
         {}
 
-    void quit() { exitRequested_.store(true, std::memory_order_relaxed); }
+    void quit() { exitRequested_ = true; }
 
     std::chrono::milliseconds DELAY = std::chrono::milliseconds::zero();
 
@@ -259,7 +98,7 @@ public:
 
     void A(std::atomic<Counter>& counter, std::chrono::milliseconds delay)
     {
-        while(!exitRequested_.load(std::memory_order_relaxed))
+        while(!exitRequested_)
         {
             Counter oldValue, newValue;
             do {
@@ -306,13 +145,183 @@ public:
     }
 };
 
+}; // namespace atomic
 
 
+
+namespace mutex {
+
+using Example = Test;
+
+TEST(ThreadingTest, mutex_2_threads)
+{
+    Example example;
+
+    std::thread t1(&Example::A, &example);
+    std::thread t2(&Example::B, &example);
+    std::this_thread::sleep_for(TIME_TO_RUN);
+    example.quit();
+
+    t1.join();
+    t2.join();
+
+//  std::cout << "resulting value:" << example.counter_ << std::endl;
+    auto result = std::tuple("mutex_2_threads", 2, example.counter_);
+    results.push_back(result);
+}
+
+
+
+
+TEST(ThreadingTest, mutex_4_threads)
+{
+    Example example;
+    std::vector<std::thread> threads; 
+
+    for(int i=0; i<2;++i)
+    {
+        std::thread t1(&Example::A, &example);
+        threads.push_back(std::move(t1));
+        std::thread t2(&Example::B, &example);
+        threads.push_back(std::move(t2));
+    }
+    std::this_thread::sleep_for(TIME_TO_RUN);
+    example.quit();
+
+    for(auto& t: threads)
+    {
+        t.join();
+    }
+
+//  std::cout << "resulting value:" << example.counter_ << std::endl;
+    auto result = std::tuple("mutex_4_threads", 4, example.counter_);
+    results.push_back(result);
+}
+
+
+
+
+TEST(ThreadingTest, mutex_8_threads)
+{
+    Example example;
+    std::vector<std::thread> threads; 
+
+    for(int i=0; i<4;++i)
+    {
+        std::thread t1(&Example::A, &example);
+        threads.push_back(std::move(t1));
+        std::thread t2(&Example::B, &example);
+        threads.push_back(std::move(t2));
+    }
+    std::this_thread::sleep_for(TIME_TO_RUN);
+    example.quit();
+
+    for(auto& t: threads)
+    {
+        t.join();
+    }
+
+//  std::cout << "resulting value:" << example.counter_ << std::endl;
+    auto result = std::tuple("mutex_8_threads", 8, example.counter_);
+    results.push_back(result);
+}
+
+
+
+
+TEST(ThreadingTest, mutex_16_threads)
+{
+    Example example;
+    std::vector<std::thread> threads; 
+
+    for(int i=0; i<8;++i)
+    {
+        std::thread t1(&Example::A, &example);
+        threads.push_back(std::move(t1));
+        std::thread t2(&Example::B, &example);
+        threads.push_back(std::move(t2));
+    }
+    std::this_thread::sleep_for(TIME_TO_RUN);
+    example.quit();
+
+    for(auto& t: threads)
+    {
+        t.join();
+    }
+
+//  std::cout << "resulting value:" << example.counter_ << std::endl;
+    auto result = std::tuple("mutex_16_threads", 16, example.counter_);
+    results.push_back(result);
+}
+
+
+
+
+TEST(ThreadingTest, mutex_32_threads)
+{
+    Example example;
+    std::vector<std::thread> threads; 
+
+    for(int i=0; i<16;++i)
+    {
+        std::thread t1(&Example::A, &example);
+        threads.push_back(std::move(t1));
+        std::thread t2(&Example::B, &example);
+        threads.push_back(std::move(t2));
+    }
+    std::this_thread::sleep_for(TIME_TO_RUN);
+    example.quit();
+
+    for(auto& t: threads)
+    {
+        t.join();
+    }
+
+//  std::cout << "resulting value:" << example.counter_ << std::endl;
+    auto result = std::tuple("mutex_32_threads", 32, example.counter_);
+    results.push_back(result);
+}
+
+
+
+
+TEST(ThreadingTest, mutex_64_threads)
+{
+    Example example;
+    std::vector<std::thread> threads; 
+
+    for(int i=0; i<32;++i)
+    {
+        std::thread t1(&Example::A, &example);
+        threads.push_back(std::move(t1));
+        std::thread t2(&Example::B, &example);
+        threads.push_back(std::move(t2));
+    }
+    std::this_thread::sleep_for(TIME_TO_RUN);
+    example.quit();
+
+    for(auto& t: threads)
+    {
+        t.join();
+    }
+
+//  std::cout << "resulting value:" << example.counter_ << std::endl;
+    auto result = std::tuple("mutex_64_threads", 64, example.counter_);
+    results.push_back(result);
+}
+
+}; // namespace mutex
+
+
+
+
+namespace atomic_memory_order_seq_cst {
 
 //////////////////////// Using std::memory_order_seq_cst - less performance but strict ordering rules
+using Example = atomic::Test<std::memory_order_seq_cst>;
+
 TEST(ThreadingTest, atomic_CAS_seq_cst_EvenThreadStartingEven)
 {
-    using Example = ExampleAtomic<std::memory_order_seq_cst>;
     Example example;
     const auto delay = example.DELAY;
     std::atomic<Counter> counter = 2;
@@ -331,7 +340,6 @@ TEST(ThreadingTest, atomic_CAS_seq_cst_EvenThreadStartingEven)
 
 TEST(ThreadingTest, atomic_CAS_seq_cst_EvenThreadStartingOdd)
 {
-    using Example = ExampleAtomic<std::memory_order_seq_cst>;
     Example example;
     const auto delay = example.DELAY;
     std::atomic<Counter> counter = 13;
@@ -349,7 +357,6 @@ TEST(ThreadingTest, atomic_CAS_seq_cst_EvenThreadStartingOdd)
 
 TEST(ThreadingTest, atomic_CAS_seq_cst_OddThreadStartingEven)
 {
-    using Example = ExampleAtomic<std::memory_order_seq_cst>;
     Example example;
     const auto delay = example.DELAY;
     std::atomic<Counter> counter = 100;
@@ -367,7 +374,6 @@ TEST(ThreadingTest, atomic_CAS_seq_cst_OddThreadStartingEven)
 
 TEST(ThreadingTest, atomic_CAS_seq_cst_OddThreadStartingOdd)
 {
-    using Example = ExampleAtomic<std::memory_order_seq_cst>;
     Example example;
     const auto delay = example.DELAY;
     std::atomic<Counter> counter = 101;
@@ -385,7 +391,6 @@ TEST(ThreadingTest, atomic_CAS_seq_cst_OddThreadStartingOdd)
 
 TEST(ThreadingTest, atomic_CAS_seq_cst_2_threads)
 {
-    using Example = ExampleAtomic<std::memory_order_seq_cst>;
     Example example;
     const auto delay = example.DELAY;
     std::atomic<Counter> counter = 1000;
@@ -421,7 +426,6 @@ TEST(ThreadingTest, atomic_CAS_seq_cst_2_threads)
 
 TEST(ThreadingTest, atomic_CAS_seq_cst_4_threads)
 {
-    using Example = ExampleAtomic<std::memory_order_seq_cst>;
     Example example;
     const auto delay = example.DELAY;
     std::atomic<Counter> counter = 5000;
@@ -464,7 +468,6 @@ TEST(ThreadingTest, atomic_CAS_seq_cst_4_threads)
 
 TEST(ThreadingTest, atomic_CAS_seq_cst_8_threads)
 {
-    using Example = ExampleAtomic<std::memory_order_seq_cst>;
     Example example;
     const auto delay = example.DELAY;
     std::atomic<Counter> counter = 10000;
@@ -508,7 +511,6 @@ TEST(ThreadingTest, atomic_CAS_seq_cst_8_threads)
 
 TEST(ThreadingTest, atomic_CAS_seq_cst_16_threads)
 {
-    using Example = ExampleAtomic<std::memory_order_seq_cst>;
     Example example;
     const auto delay = example.DELAY;
     std::atomic<Counter> counter = 20000;
@@ -552,7 +554,6 @@ TEST(ThreadingTest, atomic_CAS_seq_cst_16_threads)
 
 TEST(ThreadingTest, atomic_CAS_seq_cst_32_threads)
 {
-    using Example = ExampleAtomic<std::memory_order_seq_cst>;
     Example example;
     const auto delay = example.DELAY;
     std::atomic<Counter> counter = 30000;
@@ -596,7 +597,6 @@ TEST(ThreadingTest, atomic_CAS_seq_cst_32_threads)
 
 TEST(ThreadingTest, atomic_CAS_seq_cst_64_threads)
 {
-    using Example = ExampleAtomic<std::memory_order_seq_cst>;
     Example example;
     const auto delay = example.DELAY;
     std::atomic<Counter> counter = 40000;
@@ -635,13 +635,18 @@ TEST(ThreadingTest, atomic_CAS_seq_cst_64_threads)
     results.push_back(result);
 }
 
+}; // namespace atomic_memory_order_seq_cst
 
 
 
-//////////////////////// Using std::memory_order_relaxed - shall be best in therms of performnce
+
+namespace atomic_memory_order_relaxed {
+
+//////////////////////// Using std::memory_order_relaxed -  - shall be best in therms of performnc
+using Example = atomic::Test<std::memory_order_relaxed>;
+
 TEST(ThreadingTest, atomic_CAS_relaxed_EvenThreadStartingEven)
 {
-    using Example = ExampleAtomic<std::memory_order_relaxed>;
     Example example;
     const auto delay = example.DELAY;
     std::atomic<Counter> counter = 2;
@@ -660,7 +665,6 @@ TEST(ThreadingTest, atomic_CAS_relaxed_EvenThreadStartingEven)
 
 TEST(ThreadingTest, atomic_CAS_relaxed_EvenThreadStartingOdd)
 {
-    using Example = ExampleAtomic<std::memory_order_relaxed>;
     Example example;
     const auto delay = example.DELAY;
     std::atomic<Counter> counter = 13;
@@ -678,7 +682,6 @@ TEST(ThreadingTest, atomic_CAS_relaxed_EvenThreadStartingOdd)
 
 TEST(ThreadingTest, atomic_CAS_relaxed_OddThreadStartingEven)
 {
-    using Example = ExampleAtomic<std::memory_order_relaxed>;
     Example example;
     const auto delay = example.DELAY;
     std::atomic<Counter> counter = 100;
@@ -696,7 +699,6 @@ TEST(ThreadingTest, atomic_CAS_relaxed_OddThreadStartingEven)
 
 TEST(ThreadingTest, atomic_CAS_relaxed_OddThreadStartingOdd)
 {
-    using Example = ExampleAtomic<std::memory_order_relaxed>;
     Example example;
     const auto delay = example.DELAY;
     std::atomic<Counter> counter = 101;
@@ -714,7 +716,6 @@ TEST(ThreadingTest, atomic_CAS_relaxed_OddThreadStartingOdd)
 
 TEST(ThreadingTest, atomic_CAS_relaxed_2_threads)
 {
-    using Example = ExampleAtomic<std::memory_order_relaxed>;
     Example example;
     const auto delay = example.DELAY;
     std::atomic<Counter> counter = 1000;
@@ -749,7 +750,6 @@ TEST(ThreadingTest, atomic_CAS_relaxed_2_threads)
 
 TEST(ThreadingTest, atomic_CAS_relaxed_4_threads)
 {
-    using Example = ExampleAtomic<std::memory_order_relaxed>;
     Example example;
     const auto delay = example.DELAY;
     std::atomic<Counter> counter = 5000;
@@ -792,7 +792,6 @@ TEST(ThreadingTest, atomic_CAS_relaxed_4_threads)
 
 TEST(ThreadingTest, atomic_CAS_relaxed_8_threads)
 {
-    using Example = ExampleAtomic<std::memory_order_relaxed>;
     Example example;
     const auto delay = example.DELAY;
     std::atomic<Counter> counter = 10000;
@@ -835,7 +834,6 @@ TEST(ThreadingTest, atomic_CAS_relaxed_8_threads)
 
 TEST(ThreadingTest, atomic_CAS_relaxed_16_threads)
 {
-    using Example = ExampleAtomic<std::memory_order_relaxed>;
     Example example;
     const auto delay = example.DELAY;
     std::atomic<Counter> counter = 20000;
@@ -878,7 +876,6 @@ TEST(ThreadingTest, atomic_CAS_relaxed_16_threads)
 
 TEST(ThreadingTest, atomic_CAS_relaxed_32_threads)
 {
-    using Example = ExampleAtomic<std::memory_order_relaxed>;
     Example example;
     const auto delay = example.DELAY;
     std::atomic<Counter> counter = 30000;
@@ -922,7 +919,6 @@ TEST(ThreadingTest, atomic_CAS_relaxed_32_threads)
 
 TEST(ThreadingTest, atomic_CAS_relaxed_64_threads)
 {
-    using Example = ExampleAtomic<std::memory_order_relaxed>;
     Example example;
     const auto delay = example.DELAY;
     std::atomic<Counter> counter = 40000;
@@ -960,6 +956,7 @@ TEST(ThreadingTest, atomic_CAS_relaxed_64_threads)
     results.push_back(result);
 }
 
+}; // namespace atomic_memory_order_relaxed
 
 
 
@@ -1020,5 +1017,4 @@ TEST(ThreadingTest, results)
     EXPECT_TRUE(std::get<2>(results[5]) < std::get<2>(results[17]));
 }
 
-} // namespace ThreadingTest
 
