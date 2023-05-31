@@ -4,7 +4,7 @@
 #include <cassert>
 #include <iostream>
 
-// https://www.vertabelo.com/blog/all-about-indexes-part-2-mysql-index-structure-and-performance/
+// Custom durty MFC-like binary tree map
 
 template<class Key, class Value>
 class BTree

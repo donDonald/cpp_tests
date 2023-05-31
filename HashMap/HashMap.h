@@ -1,7 +1,6 @@
 #pragma once
 
 // Custom durty MFC-like hash map
-#include <unordered_map>
 
 template<class Key, class Value, class HashFoo=std::hash<Key>>
 class HashMap
