@@ -153,6 +153,30 @@ TEST(Cpp17, CTAD_Class_template_argument_deduction)
 
 
 
+TEST(Cpp17, tie)
+{
+//  template< class... Types >
+//  std::tuple<Types&...> tie( Types&... args ) noexcept;
+
+//  template< class... Types >
+//  constexpr std::tuple<Types&...> tie( Types&... args ) noexcept;
+
+    int a = 100;
+    std::string s("hallo");
+    auto t0 = std::tie(a, s);
+
+    EXPECT_EQ(100, std::get<0>(t0));
+    EXPECT_EQ("hallo", std::get<1>(t0));
+
+    // Check that std::tie returns a tuple of references
+    a = 101;
+    s = "bye";
+    EXPECT_EQ(101, std::get<0>(t0));
+    EXPECT_EQ("bye", std::get<1>(t0));
+}
+
+
+
 TEST(Cpp17, tuple_tie)
 {
 //  std::tuple //  It is a generalization of std::pair                                                       \
