@@ -8,4 +8,5 @@ add_subdirectory(ThreadingTest)
 add_subdirectory(provider_consumer)
 add_subdirectory(square_solver)
 add_subdirectory(tests)
+add_subdirectory(algorithms)
 
