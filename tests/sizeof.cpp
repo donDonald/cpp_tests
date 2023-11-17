@@ -1,6 +1,42 @@
 #include <gtest/gtest.h>
 #include <iostream>
 
+
+//#define MACHINE_WORD (8) // for 32 bits
+#define MACHINE_WORD (8) // for 64 bits
+
+
+TEST(sizeof, sizeof_void)
+{
+    auto size = sizeof(void);
+    EXPECT_EQ(1, size);
+}
+
+
+TEST(sizeof, sizeof_void_ptr)
+{
+    void* ptr = nullptr;
+    auto size = sizeof(ptr);
+    EXPECT_EQ(MACHINE_WORD, size);
+}
+
+
+TEST(sizeof, sizeof_bool)
+{
+    bool val;
+    auto size = sizeof(val);
+    EXPECT_EQ(1, size);
+}
+
+
+TEST(sizeof, sizeof_bool_ptr)
+{
+    bool* ptr = nullptr;
+    auto size = sizeof(ptr);
+    EXPECT_EQ(MACHINE_WORD, size);
+}
+
+
 TEST(sizeof, sizeof_uint8_t)
 {
     uint8_t val;
@@ -21,14 +57,6 @@ TEST(sizeof, sizeof_int64_6)
 {
     int64_t val;
     auto size = sizeof(val);
-    EXPECT_EQ(8, size);
-}
-
-
-TEST(sizeof, sizeof_void_ptr)
-{
-    void* ptr = nullptr;
-    auto size = sizeof(ptr);
     EXPECT_EQ(8, size);
 }
 
