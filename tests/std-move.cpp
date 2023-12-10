@@ -51,6 +51,8 @@ TEST(std_move, std_unique_ptr)
 
     EXPECT_EQ(true, std::is_move_constructible<Type>::value);
     EXPECT_EQ(true, std::is_move_assignable<Type>::value);
+
+    EXPECT_EQ(false, std::is_trivially_copyable<Type>::value);
 }
 
 
@@ -63,6 +65,8 @@ TEST(std_move, std_shared_ptr)
 
     EXPECT_EQ(true, std::is_move_constructible<Type>::value);
     EXPECT_EQ(true, std::is_move_assignable<Type>::value);
+
+    EXPECT_EQ(false, std::is_trivially_copyable<Type>::value);
 }
 
 
@@ -75,6 +79,8 @@ TEST(std_move, std_vector)
 
     EXPECT_EQ(true, std::is_move_constructible<Type>::value);
     EXPECT_EQ(true, std::is_move_assignable<Type>::value);
+
+    EXPECT_EQ(false, std::is_trivially_copyable<Type>::value);
 }
 
 
@@ -87,6 +93,8 @@ TEST(std_move, std_mutex)
 
     EXPECT_EQ(false, std::is_move_constructible<Type>::value);
     EXPECT_EQ(false, std::is_move_assignable<Type>::value);
+
+    EXPECT_EQ(true, std::is_trivially_copyable<Type>::value); // Is it?
 }
 
 
@@ -99,6 +107,8 @@ TEST(std_move, std_thread)
 
     EXPECT_EQ(true, std::is_move_constructible<Type>::value);
     EXPECT_EQ(true, std::is_move_assignable<Type>::value);
+
+    EXPECT_EQ(false, std::is_trivially_copyable<Type>::value);
 }
 
 
@@ -116,6 +126,7 @@ TEST(std_move, MovableType)
     EXPECT_EQ(true, std::is_move_constructible<Type>::value);
     EXPECT_EQ(true, std::is_move_assignable<Type>::value);
 
+    EXPECT_EQ(false, std::is_trivially_copyable<Type>::value);
     MovableType v;
 }
 
@@ -134,6 +145,8 @@ TEST(std_move, MovableAndCopyableType)
 
     EXPECT_EQ(true, std::is_move_constructible<Type>::value);
     EXPECT_EQ(true, std::is_move_assignable<Type>::value);
+
+    EXPECT_EQ(false, std::is_trivially_copyable<Type>::value);
 }
 
 
@@ -142,6 +155,13 @@ class Str
     const char* _data;
     size_t _size;
 public:
+
+    ~Str()
+    {
+        delete [] _data;
+        _data = nullptr;
+    }
+
     Str()
         : _data(nullptr)
         , _size(0)
@@ -164,9 +184,25 @@ public:
         memcpy((void*)_data, src.data(), _size);
     }
 
-    ~Str()
+    Str(const Str& src)
+        : _size(src._size)
     {
-        delete []_data;
+        _data = new char[_size];
+        memcpy((void*)_data, src._data, _size);
+    }
+
+    const Str& operator=(const Str& src)
+    {
+        if(&src != this)
+        {
+            delete [] _data;
+            _data = nullptr;
+            _size = src.size();
+            _data = new char[_size];
+            memcpy((void*)_data, src._data, _size);
+        }
+
+        return *this;
     }
 
     Str(Str&& src)
@@ -203,8 +239,15 @@ public:
     {
         return std::string(_data, _data+_size);
     }
+
+    friend std::ostream& operator<<(std::ostream& os, const Str& str);
 };
 
+std::ostream& operator<<(std::ostream& os, const Str& str)
+{
+    os << str.to_string();
+    return os;
+}
 
 template <typename T>
 constexpr bool is_lvalue(T&) {
@@ -217,9 +260,19 @@ constexpr bool is_lvalue(T&&) {
 }
 
 
+
+
 TEST(std_move, example)
 {
     using Type = Str;
+
+    EXPECT_EQ(true, std::is_copy_constructible<Type>::value);
+    EXPECT_EQ(true, std::is_copy_assignable<Type>::value);
+
+    EXPECT_EQ(true, std::is_move_constructible<Type>::value);
+    EXPECT_EQ(true, std::is_move_assignable<Type>::value);
+
+    EXPECT_EQ(false, std::is_trivially_copyable<Type>::value);
 
     Type a("abc", 3);
     EXPECT_EQ("abc", a.to_string());
@@ -235,5 +288,143 @@ TEST(std_move, example)
 
     EXPECT_EQ("", a.to_string());
     EXPECT_EQ(0, a.size());
+}
+
+
+
+
+TEST(std_move, Str)
+{
+    using Type = Str;
+    Type a("abcde", 5);
+
+    Type b = std::move(a);
+    EXPECT_EQ("", a.to_string());
+    EXPECT_EQ("abcde", b.to_string());
+
+    Type c = std::move(b);
+    EXPECT_EQ("", a.to_string());
+    EXPECT_EQ("", b.to_string());
+    EXPECT_EQ("abcde", c.to_string());
+}
+
+TEST(std_move, Str_const)
+{
+    using Type = Str;
+    const Type a("const abcde", 6+5);
+
+    Type b = std::move(a);
+    EXPECT_EQ("const abcde", a.to_string());
+    EXPECT_EQ("const abcde", b.to_string());
+
+    Type c = std::move(b);
+    EXPECT_EQ("const abcde", a.to_string());
+    EXPECT_EQ("", b.to_string());
+    EXPECT_EQ("const abcde", c.to_string());
+}
+
+TEST(std_move, Str_static_const)
+{
+    using Type = Str;
+    static const Type a("static const abcde", 7+6+5);
+
+    Type b = std::move(a);
+    EXPECT_EQ("static const abcde", a.to_string());
+    EXPECT_EQ("static const abcde", b.to_string());
+
+    Type c = std::move(b);
+    EXPECT_EQ("static const abcde", a.to_string());
+    EXPECT_EQ("", b.to_string());
+    EXPECT_EQ("static const abcde", c.to_string());
+}
+
+
+
+
+TEST(std_move, std_string)
+{
+    std::string a = "yeeeee";
+    std::string b = std::move(a);
+
+    EXPECT_EQ("", a);
+    EXPECT_EQ("yeeeee", b);
+    
+    std::string c = std::move(b);
+
+    EXPECT_EQ("", a);
+    EXPECT_EQ("", b);
+    EXPECT_EQ("yeeeee", c);
+}
+
+TEST(std_move, std_string_const)
+{
+    const std::string a = "const yeeeee";
+    std::string b = std::move(a);
+
+    EXPECT_EQ("const yeeeee", a);
+    EXPECT_EQ("const yeeeee", b);
+    
+    std::string c = std::move(b);
+
+    EXPECT_EQ("const yeeeee", a);
+    EXPECT_EQ("", b);
+    EXPECT_EQ("const yeeeee", c);
+}
+
+TEST(std_move, std_string_static_const)
+{
+    static const std::string a = "static const yeeeee";
+    std::string b = std::move(a);
+
+    EXPECT_EQ("static const yeeeee", a);
+    EXPECT_EQ("static const yeeeee", b);
+    
+    std::string c = std::move(b);
+
+    EXPECT_EQ("static const yeeeee", a);
+    EXPECT_EQ("", b);
+    EXPECT_EQ("static const yeeeee", c);
+}
+
+
+
+
+// Str::Str(const Str&)
+Str fooY(const Str& str)
+{
+    Str str2 = std::move(str);;
+    return str2;
+}
+
+TEST(std_move, const_ref)
+{
+    Str a("YYYYY", 5);
+    Str b = fooY(std::move(a));
+
+    // Check copy ctor was called, i.e. a stays unchanged
+    EXPECT_EQ(5, a.size());
+    EXPECT_EQ("YYYYY", a.to_string());
+
+    EXPECT_EQ(5, b.size());
+    EXPECT_EQ("YYYYY", b.to_string());
+}
+
+// Str::Str(Str&&)
+Str fooZ(Str&& str)
+{
+    Str str2 = std::move(str);;
+    return str2;
+}
+
+TEST(std_move, rvalue_ref)
+{
+    Str a("ZZZZZ", 5);
+    Str b  = fooZ(std::move(a));
+
+    // Check copy-move ctor was called, i.e. a is reset
+    EXPECT_EQ(0, a.size());
+
+    EXPECT_EQ(5, b.size());
+    EXPECT_EQ("ZZZZZ", b.to_string());
 }
 
