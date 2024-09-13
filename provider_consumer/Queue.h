@@ -13,7 +13,6 @@ class Queue
     std::mutex _mutex;
     std::condition_variable _condVar;
     std::deque<Element> _elements;
-    bool _cancel;
 
 public:
     Queue()

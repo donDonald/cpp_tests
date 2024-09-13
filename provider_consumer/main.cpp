@@ -13,12 +13,10 @@ using StringQueue = Queue<std::string>;
 
 class Provider
 {
+    const std::string _name;
     StringQueue& _queue;
     std::thread _thread;
     std::atomic<bool> _stopRequeted;
-
-public:
-    const std::string _name;
     int _counter;
 
 public:
@@ -33,6 +31,16 @@ public:
 
     ~Provider()
     {
+    }
+
+    const std::string& name() const
+    {
+        return _name;
+    }
+
+    int counter() const
+    {
+        return _counter;
     }
 
     void stop()
@@ -70,8 +78,6 @@ class Consumer
     StringQueue& _queue;
     std::thread _thread;
     std::atomic<bool> _stopRequeted;
-
-public:
     std::set<std::string> _strings;
 
 public:
@@ -87,6 +93,16 @@ public:
 
     ~Consumer()
     {
+    }
+
+    const std::string& name() const
+    {
+        return _name;
+    }
+
+    const std::set<std::string>& strings() const
+    {
+        return _strings;
     }
 
     void stop()
@@ -127,14 +143,14 @@ TEST(ProviderConsumer, 1_provider_1_consumer)
     provider.stop();
     consumer.stop();
 
-    EXPECT_TRUE(provider._counter > 0);
+    EXPECT_TRUE(provider.counter() > 0);
 
-    EXPECT_TRUE(consumer._strings.size() > 0);
-    EXPECT_TRUE(consumer._strings.size() <= provider._counter);
+    EXPECT_TRUE(consumer.strings().size() > 0);
+    EXPECT_TRUE(consumer.strings().size() <= provider.counter());
 
-    for(int i=0; i<provider._counter; ++i)
+    for(int i=0; i<provider.counter(); ++i)
     {
-        EXPECT_TRUE(consumer._strings.find(provider._name+", Hello:" + std::to_string(i)) != consumer._strings.end());
+        EXPECT_TRUE(consumer.strings().find(provider.name() + ", Hello:" + std::to_string(i)) != consumer.strings().end());
     }
 }
 
@@ -155,25 +171,25 @@ TEST(ProviderConsumer, 3_providers_1_consumer)
     providerC.stop();
     consumer.stop();
 
-    EXPECT_TRUE(providerA._counter > 0);
-    EXPECT_TRUE(providerB._counter > 0);
-    EXPECT_TRUE(providerC._counter > 0);
+    EXPECT_TRUE(providerA.counter() > 0);
+    EXPECT_TRUE(providerB.counter() > 0);
+    EXPECT_TRUE(providerC.counter() > 0);
 
-    EXPECT_TRUE(consumer._strings.size() == providerA._counter + providerB._counter + providerC._counter);
+    EXPECT_TRUE(consumer.strings().size() == providerA.counter() + providerB.counter() + providerC.counter());
 
-    for(int i=0; i<providerA._counter; ++i)
+    for(int i=0; i<providerA.counter(); ++i)
     {
-        EXPECT_TRUE(consumer._strings.find(providerA._name+", Hello:" + std::to_string(i)) != consumer._strings.end());
+        EXPECT_TRUE(consumer.strings().find(providerA.name() + ", Hello:" + std::to_string(i)) != consumer.strings().end());
     }
 
-    for(int i=0; i<providerB._counter; ++i)
+    for(int i=0; i<providerB.counter(); ++i)
     {
-        EXPECT_TRUE(consumer._strings.find(providerB._name+", Hello:" + std::to_string(i)) != consumer._strings.end());
+        EXPECT_TRUE(consumer.strings().find(providerB.name() + ", Hello:" + std::to_string(i)) != consumer.strings().end());
     }
 
-    for(int i=0; i<providerC._counter; ++i)
+    for(int i=0; i<providerC.counter(); ++i)
     {
-        EXPECT_TRUE(consumer._strings.find(providerC._name+", Hello:" + std::to_string(i)) != consumer._strings.end());
+        EXPECT_TRUE(consumer.strings().find(providerC.name() + ", Hello:" + std::to_string(i)) != consumer.strings().end());
     }
 }
 
