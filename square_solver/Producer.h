@@ -2,6 +2,7 @@
 #define a9393acf4592d8d51f9de14c027b3032
 
 #include <ostream>
+#include <optional>
 
 /**
  * @brief Collection of coefficients for quadratic equation.
@@ -35,7 +36,7 @@ class Producer
 {
 public:
     Producer(int argc, char* argv[]);
-    bool peek(Coefficients& coefficients);
+    std::optional<Coefficients> peek();
 
 private:
     static double strToDouble(char* str);

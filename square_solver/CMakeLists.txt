@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.11)
 
 project(square_solver)
 set(APPLICATION_NAME square_solver)
-set (CMAKE_CXX_STANDARD 14)
+set (CMAKE_CXX_STANDARD 17)
 
 find_package(Threads REQUIRED)
 

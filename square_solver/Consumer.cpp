@@ -16,8 +16,7 @@ void Consumer::start()
         _freeWorkers.push_back(std::move(worker));
     }
 
-    Coefficients coeffs;
-    while(_producer.peek(coeffs))
+    while(auto coeffs = _producer.peek())
     {
         if(_freeWorkers.size()>0)
         {
@@ -25,7 +24,7 @@ void Consumer::start()
             WorkerPtr worker = std::move(_freeWorkers.front());
             _freeWorkers.pop_front();
             _runningWorkers.push_back(std::move(worker));
-            _runningWorkers.back()->start(coeffs);
+            _runningWorkers.back()->start(*coeffs);
         }
         else
         {

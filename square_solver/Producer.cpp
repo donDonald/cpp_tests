@@ -40,19 +40,21 @@ Producer::Producer(int argc, char* argv[])
 {
 }
 
-bool Producer::peek(Coefficients& coefficients)
+
+std::optional<Coefficients> Producer::peek()
 {
     if(_argcPosition < _argc)
     {
+        Coefficients coefficients;
         coefficients._a = strToDouble(_argv[_argcPosition]);
         coefficients._b = _argcPosition+1<_argc ? strToDouble(_argv[_argcPosition+1]) : 0;
         coefficients._c = _argcPosition+2<_argc ? strToDouble(_argv[_argcPosition+2]) : 0;
         _argcPosition += 3;
-        return true;
+        return coefficients;
     }
     else
     {
-        return false;
+        return std::nullopt;
     }
 }
 
