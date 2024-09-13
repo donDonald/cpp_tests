@@ -18,7 +18,7 @@ $ make -j$(nproc)
 
 ### Collecting test results
 ```
-$ ./cpp.tests
+$ ./ThreadingTest
 ```
 
 ### Details
