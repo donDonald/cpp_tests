@@ -27,7 +27,6 @@ namespace false_sharing
 
     void test(int threadsCount, int steps)
     {
-
         std::vector<std::thread> threads;
         Values values;
 
@@ -45,9 +44,9 @@ namespace false_sharing
         }
 
         // Join all threads
-        for(int i=0; i<threadsCount; i++)
+        for(auto& thread : threads)
         {
-            threads[i].join();
+            thread.join();
         }
 
         for(int i=0; i<threadsCount; i++)
@@ -78,7 +77,7 @@ namespace no_false_sharing
                 return a;
             }
             int a;
-            char padding[64];
+            char padding[128]; // To keep Vs on different cache lines
         };
 
         V a[256]; // Up to 256 threads
@@ -103,9 +102,9 @@ namespace no_false_sharing
         }
 
         // Join all threads
-        for(int i=0; i<threadsCount; ++i)
+        for(auto& thread : threads)
         {
-            threads[i].join();
+            thread.join();
         }
 
         for(int i=0; i<threadsCount; i++)
@@ -116,6 +115,38 @@ namespace no_false_sharing
     }
 
 }; // namespace no_false_sharing
+
+
+
+
+TEST(FalseSharing, 1000000_iterations)
+{
+    const auto threadsCount = std::thread::hardware_concurrency();
+    const int steps = 1'000'000;
+    auto ts1 = std::chrono::system_clock::now();
+    false_sharing::test(threadsCount, steps);
+    auto ts2 = std::chrono::system_clock::now();
+    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(ts2 - ts1).count();
+    std::cout << steps << " iterations, elapsed(ms):" << elapsed <<  std::endl;
+    auto result = std::tuple<std::string, int, int>("FalseSharing is presenting", steps, elapsed);
+    results.push_back(result);
+}
+
+
+
+
+TEST(FalseSharing, 1000000_iterations_fixed)
+{
+    const auto threadsCount = std::thread::hardware_concurrency();
+    const int steps = 1'000'000;
+    auto ts1 = std::chrono::system_clock::now();
+    no_false_sharing::test(threadsCount, steps);
+    auto ts2 = std::chrono::system_clock::now();
+    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(ts2 - ts1).count();
+    std::cout << steps << " iterations, elapsed(ms):" << elapsed <<  std::endl;
+    auto result = std::tuple<std::string, int, int>("FalseSharing is fixed", steps, elapsed);
+    results.push_back(result);
+}
 
 
 
@@ -206,4 +237,3 @@ TEST(FalseSharingFixed, results)
         std::cout << "    " << name1 << " Vs " << name2 << " (" << steps1 << " steps):" << elapsed1 << " Vs "  <<  elapsed2 << ", False Sharing leads to:" << std::setprecision(4) << ratio << " times performance degradation"<< std::endl;
     }
 }
-

@@ -24,7 +24,7 @@ Let’s consider a simple optimization case-study where a well-intentioned progr
 ### Example
 
 
-Here all a, b, c, and d are located one by one on the same cache line -> leading ti cache invalidation once any of tjose 4 is written
+Here all a, b, c, and d are located one by one on the same cache line -> leading the cache invalidation once any of those 4 is written
 
 ```
 void falseSharing()
