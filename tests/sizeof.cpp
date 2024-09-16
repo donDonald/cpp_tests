@@ -1,9 +1,10 @@
 #include <gtest/gtest.h>
 #include <iostream>
 
+// Define size of machine word here
+#define MACHINE_WORD (sizeof(size_t))
 
-//#define MACHINE_WORD (8) // for 32 bits
-#define MACHINE_WORD (8) // for 64 bits
+
 
 
 TEST(sizeof, sizeof_void)
@@ -11,6 +12,8 @@ TEST(sizeof, sizeof_void)
     auto size = sizeof(void);
     EXPECT_EQ(1, size);
 }
+
+
 
 
 TEST(sizeof, sizeof_void_ptr)
@@ -21,12 +24,16 @@ TEST(sizeof, sizeof_void_ptr)
 }
 
 
+
+
 TEST(sizeof, sizeof_bool)
 {
     bool val;
     auto size = sizeof(val);
     EXPECT_EQ(1, size);
 }
+
+
 
 
 TEST(sizeof, sizeof_bool_ptr)
@@ -37,12 +44,16 @@ TEST(sizeof, sizeof_bool_ptr)
 }
 
 
+
+
 TEST(sizeof, sizeof_uint8_t)
 {
     uint8_t val;
     auto size = sizeof(val);
     EXPECT_EQ(1, size);
 }
+
+
 
 
 TEST(sizeof, sizeof_int)
@@ -53,12 +64,16 @@ TEST(sizeof, sizeof_int)
 }
 
 
+
+
 TEST(sizeof, sizeof_int64_6)
 {
     int64_t val;
     auto size = sizeof(val);
     EXPECT_EQ(8, size);
 }
+
+
 
 
 struct EmptyStruct{};
@@ -68,6 +83,8 @@ TEST(sizeof, sizeof_EmptyStruct)
     auto size = sizeof(val);
     EXPECT_EQ(1, size);
 }
+
+
 
 
 struct AlignedStruct {
@@ -84,6 +101,8 @@ TEST(sizeof, sizeof_AlignedStruct)
 }
 
 
+
+
 struct NotAlignedStruct {
     char b;
     int a;
@@ -98,6 +117,8 @@ TEST(sizeof, sizeof_NotAlignedStruct)
 }
 
 
+
+
 struct StructWithStaticMember {
     int a;
     static int b;
@@ -109,6 +130,8 @@ TEST(sizeof, sizeof_StructWithStaticMember)
     EXPECT_EQ(sizeof(StructWithStaticMember::a), size);
     EXPECT_EQ(4, size);
 }
+
+
 
 
 #pragma pack(push, 1)
@@ -127,6 +150,8 @@ TEST(sizeof, sizeof_AlignedAndPackedStruct)
 }
 
 
+
+
 #pragma pack(push, 1)
 struct NotAlignedAndPackedStruct {
     char b;
@@ -143,6 +168,8 @@ TEST(sizeof, sizeof_NotAlignedAndPackedStruct)
 }
 
 
+
+
 struct StructureWithDtor
 {
     ~StructureWithDtor() {}
@@ -157,6 +184,8 @@ TEST(sizeof, sizeof_StructureWithDtor)
 }
 
 
+
+
 struct StructureWithVirtualDtor
 {
     virtual ~StructureWithVirtualDtor() {}
@@ -169,6 +198,8 @@ TEST(sizeof, sizeof_StructureWithVirtualDtor)
     EXPECT_EQ(sizeof(StructureWithVirtualDtor::a) + sizeof(void*) + 4, size);
     EXPECT_EQ(4+sizeof(void*)+4, size); // Q: What that last 4 stands for? alignment/packing? A: Yeap, it's packing
 }
+
+
 
 
 #pragma pack(push, 1)
