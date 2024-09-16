@@ -61,16 +61,12 @@ TEST(Cpp17, StructuredBindings)
     {
         auto mytuple = []()
         {
-        //  char a = 'h';
-        //  int i = 473;
-        //  bool b = false;
-        //  return std::make_tuple(a, i, b);
             return std::tuple('h', 473, false);
         };
         auto [a, i, b] = mytuple();
-                EXPECT_EQ('h', a);
-                EXPECT_EQ(473, i);
-                EXPECT_EQ(false, b);
+        EXPECT_EQ('h', a);
+        EXPECT_EQ(473, i);
+        EXPECT_EQ(false, b);
     }
 }
 
@@ -179,19 +175,19 @@ TEST(Cpp17, tie)
 
 TEST(Cpp17, tuple_tie)
 {
-//  std::tuple //  It is a generalization of std::pair                                                       \
-//  std::make_tuple(...)                                                                                     \
-//                                                                                                           \
-//  https://en.cppreference.com/w/cpp/utility/tuple/tie                                                      \
-//  std::tie // Creates a tuple of lvalue references to its arguments or instances of std::ignore.           \
-//                                                                                                           \
-//  template< class... Types >                                                                               \
-//  std::tuple<Types&...> tie( Types&... args ) noexcept;                                                    \
-//                                                                                                           \
-//  template< class... Types >                                                                               \
-//  constexpr std::tuple<Types&...> tie( Types&... args ) noexcept;                                          \
-//                                                                                                           \
-//  https://lhcb.github.io/developkit-lessons/first-development-steps/05c-.html                         \
+//  std::tuple //  It is a generalization of std::pair
+//  std::make_tuple(...)
+//
+//  https://en.cppreference.com/w/cpp/utility/tuple/tie
+//  std::tie // Creates a tuple of lvalue references to its arguments or instances of std::ignore.
+//
+//  template< class... Types >
+//  std::tuple<Types&...> tie( Types&... args ) noexcept;
+//
+//  template< class... Types >
+//  constexpr std::tuple<Types&...> tie( Types&... args ) noexcept;
+//
+//  https://lhcb.github.io/developkit-lessons/first-development-steps/05c-.html
 
     {
         std::cout << "##################################(a):" << std::endl;
@@ -254,7 +250,7 @@ TEST(Cpp17, tuple_tie)
 
     {
         std::cout << "##################################(as ret value of a function)" << std::endl;
-        auto f = [](int index){
+        auto f = [](int index) {
             return std::tuple("Ddd" + std::to_string(index), "Ddddddd" + std::to_string(index), 2+index);
         };
         std::string sFirstName;
