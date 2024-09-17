@@ -106,3 +106,17 @@ target_link_libraries(
     ${GTEST_BOTH_LIBRARIES}
     Threads::Threads
 )
+
+
+
+
+add_executable (
+    std-forward
+    std-forward.cpp
+)
+
+target_link_libraries(
+    std-forward
+    ${GTEST_BOTH_LIBRARIES}
+    Threads::Threads
+)

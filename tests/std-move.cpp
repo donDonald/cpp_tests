@@ -56,6 +56,8 @@ TEST(std_move, std_unique_ptr)
 }
 
 
+
+
 TEST(std_move, std_shared_ptr)
 {
     using Type = std::shared_ptr<int>;
@@ -68,6 +70,8 @@ TEST(std_move, std_shared_ptr)
 
     EXPECT_EQ(false, std::is_trivially_copyable<Type>::value);
 }
+
+
 
 
 TEST(std_move, std_vector)
@@ -84,6 +88,8 @@ TEST(std_move, std_vector)
 }
 
 
+
+
 TEST(std_move, std_mutex)
 {
     using Type = std::mutex;
@@ -98,6 +104,8 @@ TEST(std_move, std_mutex)
 }
 
 
+
+
 TEST(std_move, std_thread)
 {
     using Type = std::thread;
@@ -110,6 +118,8 @@ TEST(std_move, std_thread)
 
     EXPECT_EQ(false, std::is_trivially_copyable<Type>::value);
 }
+
+
 
 
 struct MovableType
@@ -131,6 +141,8 @@ TEST(std_move, MovableType)
 }
 
 
+
+
 struct MovableAndCopyableType
 {
     std::shared_ptr<std::string> _str;
@@ -148,6 +160,8 @@ TEST(std_move, MovableAndCopyableType)
 
     EXPECT_EQ(false, std::is_trivially_copyable<Type>::value);
 }
+
+
 
 
 class Str
@@ -185,7 +199,8 @@ public:
     }
 
     Str(const Str& src)
-        : _size(src._size)
+        : _data(nullptr)
+        , _size(src._size)
     {
         _data = new char[_size];
         memcpy((void*)_data, src._data, _size);
@@ -219,6 +234,7 @@ public:
     {
         if(&src != this)
         {
+            delete [] _data;
             _data = src._data;
             _size = src._size;
 
@@ -240,14 +256,13 @@ public:
         return std::string(_data, _data+_size);
     }
 
-    friend std::ostream& operator<<(std::ostream& os, const Str& str);
+    friend std::ostream& operator<<(std::ostream& os, const Str& str)
+    {
+        os << str.to_string();
+        return os;
+    }
 };
 
-std::ostream& operator<<(std::ostream& os, const Str& str)
-{
-    os << str.to_string();
-    return os;
-}
 
 template <typename T>
 constexpr bool is_lvalue(T&) {
@@ -308,6 +323,9 @@ TEST(std_move, Str)
     EXPECT_EQ("abcde", c.to_string());
 }
 
+
+
+
 TEST(std_move, Str_const)
 {
     using Type = Str;
@@ -322,6 +340,9 @@ TEST(std_move, Str_const)
     EXPECT_EQ("", b.to_string());
     EXPECT_EQ("const abcde", c.to_string());
 }
+
+
+
 
 TEST(std_move, Str_static_const)
 {
@@ -356,6 +377,9 @@ TEST(std_move, std_string)
     EXPECT_EQ("yeeeee", c);
 }
 
+
+
+
 TEST(std_move, std_string_const)
 {
     const std::string a = "const yeeeee";
@@ -370,6 +394,9 @@ TEST(std_move, std_string_const)
     EXPECT_EQ("", b);
     EXPECT_EQ("const yeeeee", c);
 }
+
+
+
 
 TEST(std_move, std_string_static_const)
 {
@@ -392,7 +419,7 @@ TEST(std_move, std_string_static_const)
 // Str::Str(const Str&)
 Str fooY(const Str& str)
 {
-    Str str2 = std::move(str);;
+    Str str2 = std::move(str);
     return str2;
 }
 
@@ -409,10 +436,13 @@ TEST(std_move, const_ref)
     EXPECT_EQ("YYYYY", b.to_string());
 }
 
+
+
+
 // Str::Str(Str&&)
 Str fooZ(Str&& str)
 {
-    Str str2 = std::move(str);;
+    Str str2 = std::move(str);
     return str2;
 }
 
@@ -421,10 +451,10 @@ TEST(std_move, rvalue_ref)
     Str a("ZZZZZ", 5);
     Str b  = fooZ(std::move(a));
 
-    // Check copy-move ctor was called, i.e. a is reset
+    // Check move ctor was called, i.e. a is reset
+    EXPECT_EQ("", a.to_string());
     EXPECT_EQ(0, a.size());
 
     EXPECT_EQ(5, b.size());
     EXPECT_EQ("ZZZZZ", b.to_string());
 }
-
