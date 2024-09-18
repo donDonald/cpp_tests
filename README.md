@@ -5,12 +5,21 @@
 * ThreadingTest - std::atomic and memory models example
 * provider-supplier - Proider-Supplier pattern example, Supplier creates a bunch of workers and feeds those with tasks provided by Provider
 * square-solver - Solvig [Quadratic Equationi like A*x^2+B*x+C=0](https://en.wikipedia.org/wiki/Quadratic_equation) in many workers
-* tests - SOme C++ test for atomics, multu-threading and so on
+* parralel_parsing - example of parsing many files in parralel
+* tests - Some C++ test for atomics, multy-threading and so on
+
+
+
 
 ### Prerequisites
 * Ubuntu 20.04, older versions shall work as well
 * cmake 3.10 or newver
 * build-essential package
+* boost dev libraries
+* gtest
+
+
+
 
 ### Building
 ```
