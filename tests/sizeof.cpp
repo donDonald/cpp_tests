@@ -179,6 +179,7 @@ TEST(sizeof, sizeof_StructureWithDtor)
 {
     StructureWithDtor val;
     auto size = sizeof(val);
+    // Payload only
     EXPECT_EQ(sizeof(StructureWithDtor::a), size);
     EXPECT_EQ(4, size);
 }
@@ -195,8 +196,9 @@ TEST(sizeof, sizeof_StructureWithVirtualDtor)
 {
     StructureWithVirtualDtor val;
     auto size = sizeof(val);
-    EXPECT_EQ(sizeof(StructureWithVirtualDtor::a) + sizeof(void*) + 4, size);
-    EXPECT_EQ(4+sizeof(void*)+4, size); // Q: What that last 4 stands for? alignment/packing? A: Yeap, it's packing
+    // Vtable ptr + padding + payload
+    EXPECT_EQ(sizeof(void*) + sizeof(StructureWithVirtualDtor::a) + 4, size);
+    EXPECT_EQ(sizeof(void*) + 4 + 4, size);
 }
 
 
@@ -212,8 +214,38 @@ TEST(sizeof, sizeof_StructureWithVirtualDtorPacked)
 {
     StructureWithVirtualDtorPacked val;
     auto size = sizeof(val);
-    EXPECT_EQ(sizeof(StructureWithVirtualDtorPacked::a) + sizeof(void*), size);
-    EXPECT_EQ(4+sizeof(void*), size);
+    // Vtable ptr + payload, no padding
+    EXPECT_EQ(sizeof(void*) + sizeof(StructureWithVirtualDtorPacked::a), size);
+    EXPECT_EQ(sizeof(void*) + 4, size);
 }
 #pragma pack(pop)
 
+
+
+
+TEST(sizeof, sizeof_unique_ptr)
+{
+    // No control block, only pointer to payload
+    std::unique_ptr<std::string> ptr;
+    EXPECT_EQ(sizeof(void*), sizeof(ptr));
+}
+
+
+
+
+TEST(sizeof, sizeof_shared_ptr)
+{
+    // Control block + pointer to payload
+    std::shared_ptr<std::string> ptr;
+    EXPECT_EQ(2*sizeof(void*), sizeof(ptr));
+}
+
+
+
+
+TEST(sizeof, sizeof_weak_ptr)
+{
+    // Control block + pointer to payload
+    std::weak_ptr<std::string> ptr;
+    EXPECT_EQ(2*sizeof(void*), sizeof(ptr));
+}
