@@ -15,9 +15,11 @@
 #include <boost/tokenizer.hpp>
 #include <boost/token_functions.hpp>
 
-using namespace boost;
 using namespace boost::program_options;
 using namespace std;
+using RecordValue_t = uint16_t;
+using UpdateResultsFoo = std::function<void(unordered_map<RecordValue_t, uint64_t>&)>;
+static const string BIN_NAME = "parser";
 
 
 
@@ -41,12 +43,12 @@ struct File
         }
     }
 
-    std::FILE* operator*()
+    FILE* operator*()
     {
         return _fp;
     }
 
-    std::FILE* _fp;
+    FILE* _fp;
     string     _path;
 };
 
@@ -63,12 +65,12 @@ struct CustomAllocator {
     {
     }
 
-    T* allocate (std::size_t n)
+    T* allocate (size_t n)
     {
         return reinterpret_cast<T*>( ::operator new(n*sizeof(T)));
     }
 
-    void deallocate (T* p, std::size_t n)
+    void deallocate (T* p, size_t n)
     {
         ::operator delete(p);
     }
@@ -77,18 +79,11 @@ struct CustomAllocator {
 
 
 
-static const string BIN_NAME = "parser";
-using RecordValue_t = uint16_t;
-using UpdateResultsFoo = std::function<void(unordered_map<RecordValue_t, uint64_t>&)>;
-
-
-
-
 class FsIterator
 {
 public:
     FsIterator(const string& path,
-               const std::string& extension)
+               const string& extension)
         : _iterator()
         , _extension(extension)
         , _maxBufferSize(100)
@@ -96,12 +91,12 @@ public:
     {
         _buffer.reserve(_maxBufferSize);
         auto p = filesystem::current_path().append(path);
-        if (!std::filesystem::is_directory(p))
+        if (!filesystem::is_directory(p))
             throw runtime_error(path + " folder doesn't exists");
         _iterator = filesystem::directory_iterator(p);
     }
 
-    std::optional<filesystem::path> next()
+    optional<filesystem::path> next()
     {
         lock_guard<mutex> lock(_mutex);
         if(_buffer.empty())
@@ -122,7 +117,7 @@ public:
 
         if(!_buffer.empty())
         {
-            std::optional<filesystem::path> result(move(_buffer.back()));
+            optional<filesystem::path> result(move(_buffer.back()));
             _buffer.pop_back();
             return result;
         }
@@ -132,7 +127,7 @@ public:
 
 private:
     filesystem::directory_iterator _iterator;
-    std::string                    _extension;
+    string                         _extension;
     mutex                          _mutex;
     const size_t                   _maxBufferSize;
     vector<filesystem::path>       _buffer;
@@ -172,7 +167,7 @@ private:
     {
         while(auto path = _iterator.next())
         {
-            auto file = std::allocate_shared<File>(_fileAllocator, *path);
+            auto file = allocate_shared<File>(_fileAllocator, *path);
             size_t bytesLeft = 0;
             size_t bytesDone = 1;
             while(bytesDone)
@@ -277,17 +272,17 @@ public:
 
     void run()
     {
-        const auto time_begin = std::chrono::system_clock::now();
+        const auto time_begin = chrono::system_clock::now();
 
         cout << "buffer size: " << _bufferSize << endl;
         cout << "workers count: " << _workersCount << endl;
         auto nproc = _workersCount;
-        std::vector<std::unique_ptr<Worker>> workers;
+        vector<unique_ptr<Worker>> workers;
         while (nproc > 0)
         {
-            UpdateResultsFoo update = std::bind(&Parser::updateResults, this, placeholders::_1);
+            UpdateResultsFoo update = bind(&Parser::updateResults, this, placeholders::_1);
             auto worker = make_unique<Worker>(_iterator, _bufferSize, update);
-            workers.emplace(workers.end(), std::move(worker));
+            workers.emplace(workers.end(), move(worker));
             --nproc;
         }
 
@@ -315,7 +310,7 @@ public:
         ofs << "values totally:" << valuesTotalCount << endl;
         ofs.close();
 
-        const auto time_complete = std::chrono::system_clock::now();
+        const auto time_complete = chrono::system_clock::now();
         auto elapsed = chrono::duration_cast<chrono::seconds>(time_complete - time_begin);
         cout << "time elapsed(seconds):" << elapsed.count() << endl;
     }
@@ -343,12 +338,12 @@ private:
 
 
 
-void print_help(const options_description& od)
+void printHelp(const options_description& od)
 {
-    cout << "Parse a bunch of files containing test data" << std::endl
+    cout << "Parse a bunch of files containing test data" << endl
          << "example: ./" << BIN_NAME 
          << " --src-folder=output --buffer-size=4096 --workers-count=4 --result-file=result-4096-4.index"
-         << std::endl << od;
+         << endl << od;
 }
 
 
@@ -374,7 +369,7 @@ int main(int argc, char* argv[])
 
         if (vm.count("help")) 
         {
-            print_help(general);
+            printHelp(general);
             return 0;
 		}
 
@@ -384,19 +379,19 @@ int main(int argc, char* argv[])
         string resultFile;
 
         if (!vm.count("src-folder"))
-            throw std::invalid_argument("missing src-folder");
+            throw invalid_argument("missing src-folder");
         srcFolder = vm["src-folder"].as<string>();
 
         if (!vm.count("workers-count"))
-            throw std::invalid_argument("missing workers-count");
+            throw invalid_argument("missing workers-count");
         workersCount = vm["workers-count"].as<uint16_t>();
 
         if (!vm.count("buffer-size"))
-            throw std::invalid_argument("missing buffer-size");
+            throw invalid_argument("missing buffer-size");
         bufferSize = vm["buffer-size"].as<uint32_t>();
 
         if (!vm.count("result-file"))
-            throw std::invalid_argument("missing result-file");
+            throw invalid_argument("missing result-file");
         resultFile = vm["result-file"].as<string>();
 
         cout << "src-folder:" << srcFolder << endl;
@@ -404,14 +399,14 @@ int main(int argc, char* argv[])
 
         parser = make_unique<Parser>(srcFolder, bufferSize, workersCount, resultFile);
     }
-    catch(std::invalid_argument& e)
+    catch(invalid_argument& e)
     {
-        print_help(general);
+        printHelp(general);
         return -1;
     }
-    catch(std::exception& e)
+    catch(exception& e)
     {
-        cerr << e.what() << ", exiting"<< std::endl;
+        cerr << e.what() << ", exiting"<< endl;
         return -1;
     }
 

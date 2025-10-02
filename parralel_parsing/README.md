@@ -10,6 +10,7 @@ Each file contains a set of uint16_t values separated by comma.
  * cmake 3.10 or newver
  * build-essential package
  * boost dev libraries
+ * gtest
 
 
 

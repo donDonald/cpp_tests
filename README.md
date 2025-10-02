@@ -11,7 +11,7 @@
 
 
 
-### Prerequisites
+## Prerequisites
 * Ubuntu 20.04, older versions shall work as well
 * cmake 3.10 or newver
 * build-essential package
@@ -21,7 +21,16 @@
 
 
 
-### Building
+## Install dependencies
+```
+sudo apt update
+sudo apt install libboost-all-dev libgtest-dev cmake
+```
+
+
+
+
+## Building
 ```
 $ git clone https://github.com/donDonald/cpp_tests
 $ mkdir build && cd build

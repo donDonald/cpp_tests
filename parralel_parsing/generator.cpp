@@ -15,13 +15,11 @@
 #include <boost/token_functions.hpp>
 
 using namespace boost::program_options;
-
 using namespace std;
-static const string BIN_NAME = "generator";
-
 using FileRecordsCount_t = uint32_t;
 using RecordValue_t = uint16_t;
-using UpdateResultsFoo = std::function<void(unordered_map<RecordValue_t, uint64_t>&)>;
+using UpdateResultsFoo = function<void(unordered_map<RecordValue_t, uint64_t>&)>;
+static const string BIN_NAME = "generator";
 
 
 
@@ -29,12 +27,12 @@ using UpdateResultsFoo = std::function<void(unordered_map<RecordValue_t, uint64_
 class Worker
 {
 public:
-    Worker(string& dstFolder,
-           std::atomic<int64_t>& numFiles,
-           string& filePrefix,
-           FileRecordsCount_t& minSize,
-           FileRecordsCount_t& maxSize,
-           UpdateResultsFoo updateResultsFoo)
+    Worker(const string&         dstFolder,
+           atomic<int64_t>&      numFiles,
+           const string&         filePrefix,
+           FileRecordsCount_t&   minSize,
+           FileRecordsCount_t&   maxSize,
+           UpdateResultsFoo      updateResultsFoo)
         : _dstFolder(dstFolder)
         , _numFiles(numFiles)
         , _filePrefix(filePrefix)
@@ -56,7 +54,7 @@ public:
 private:
     void foo()
     {
-        std::thread::id this_id = std::this_thread::get_id();
+        thread::id this_id = this_thread::get_id();
         random_device rd;
         mt19937 gen(rd());
         uniform_int_distribution<FileRecordsCount_t> fileRecordsCountDistrimution(_minSize, _maxSize);
@@ -103,15 +101,15 @@ private:
         }
     }
 
-    string&               _dstFolder;
-    std::atomic<int64_t>& _numFiles;
-    string&               _filePrefix;
-    FileRecordsCount_t&   _minSize;
-    FileRecordsCount_t&   _maxSize;
-    thread                _thread;
-    int                   _resultsMaxSize;
+    const string&                          _dstFolder;
+    atomic<int64_t>&                       _numFiles;
+    const string&                          _filePrefix;
+    FileRecordsCount_t&                    _minSize;
+    FileRecordsCount_t&                    _maxSize;
+    thread                                 _thread;
+    int                                    _resultsMaxSize;
     unordered_map<RecordValue_t, uint64_t> _results;
-    UpdateResultsFoo      _updateResultsFoo;
+    UpdateResultsFoo                       _updateResultsFoo;
 };
 
 
@@ -136,24 +134,27 @@ public:
         , _results()
         {
             _results.reserve(_resultsMaxSize);
-            if (!std::filesystem::is_directory(_dstFolder))
-                throw invalid_argument(_dstFolder + " folder doesn't exists");
+            // Create destination folder
+            if (!filesystem::is_directory(_dstFolder))
+            {
+                filesystem::create_directory(_dstFolder);
+            }
         }
 
     void run()
     {
-        auto nproc = std::thread::hardware_concurrency();
-        std::vector<std::unique_ptr<Worker>> workers;
+        auto nproc = thread::hardware_concurrency();
+        vector<unique_ptr<Worker>> workers;
         while (nproc > 0)
         {
-            UpdateResultsFoo update = std::bind(&Generator::updateResults, this, placeholders::_1);
+            UpdateResultsFoo update = bind(&Generator::updateResults, this, placeholders::_1);
             auto worker = make_unique<Worker>(_dstFolder,
                                               _numFiles,
                                               _filePrefix,
                                               _minSize,
                                               _maxSize,
                                               update);
-            workers.emplace(workers.end(), std::move(worker));
+            workers.emplace(workers.end(), move(worker));
             --nproc;
         }
 
@@ -198,26 +199,26 @@ private:
         ofs.close();
     }
 
-    string               _dstFolder;
-    std::atomic<int64_t> _numFiles;
-    string               _filePrefix;
-    FileRecordsCount_t   _minSize;
-    FileRecordsCount_t   _maxSize;
-    string               _indexFile;
-    mutex                _mutex;
-    int                  _resultsMaxSize;
-	unordered_map<RecordValue_t, uint64_t> _results;
+    string                                 _dstFolder;
+    atomic<int64_t>                        _numFiles;
+    string                                 _filePrefix;
+    FileRecordsCount_t                     _minSize;
+    FileRecordsCount_t                     _maxSize;
+    string                                 _indexFile;
+    mutex                                  _mutex;
+    int                                    _resultsMaxSize;
+    unordered_map<RecordValue_t, uint64_t> _results;
 };
 
 
 
 
-void print_help(const options_description& od)
+void printHelp(const options_description& od)
 {
-    cout << "Generate a bunch of files containing test data" << std::endl
-         << "example: " << BIN_NAME 
+    cout << "Generate a bunch of files containing test data" << endl
+         << "example: ./" << BIN_NAME 
          << " --dst-folder=output --num-files=100 --file-prefix=data --min-size=100 --max-size=1000000 --index-file=data.index"
-         << std::endl << od;
+         << endl << od;
 }
 
 
@@ -245,7 +246,7 @@ int main(int argc, char* argv[])
 
         if (vm.count("help")) 
         {
-            print_help(general);
+            printHelp(general);
             return 0;
 		}
 
@@ -257,27 +258,27 @@ int main(int argc, char* argv[])
         string             indexFile;
 
         if (!vm.count("dst-folder"))
-            throw std::invalid_argument("missing dst-folder");
+            throw invalid_argument("missing dst-folder");
         dstFolder = vm["dst-folder"].as<string>();
 
         if (!vm.count("num-files"))
-            throw std::invalid_argument("missing num-files");
+            throw invalid_argument("missing num-files");
         numFiles = vm["num-files"].as<int64_t>();
 
         if (!vm.count("file-prefix"))
-            throw std::invalid_argument("missing file-prefix");
+            throw invalid_argument("missing file-prefix");
         filePrefix = vm["file-prefix"].as<string>();
 
         if (!vm.count("min-size"))
-            throw std::invalid_argument("missing min-size");
+            throw invalid_argument("missing min-size");
         minSize = vm["min-size"].as<FileRecordsCount_t>();
 
         if (!vm.count("max-size"))
-            throw std::invalid_argument("missing max-size");
+            throw invalid_argument("missing max-size");
         maxSize = vm["max-size"].as<FileRecordsCount_t>();
 
         if (!vm.count("index-file"))
-            throw std::invalid_argument("missing file-index");
+            throw invalid_argument("missing file-index");
         indexFile = vm["index-file"].as<string>();
 
         generator = make_unique<Generator>(dstFolder,
@@ -286,21 +287,20 @@ int main(int argc, char* argv[])
                                            minSize,
                                            maxSize,
                                            indexFile);
-
 //      cout << "dst-folder:" << dstFolder << endl;
 //      cout << "num-files:" << numFiles << endl;
 //      cout << "file-prefix:" << filePrefix << endl;
 //      cout << "min-size:" << minSize << endl;
 //      cout << "max-size:" << maxSize << endl;
     }
-    catch(std::invalid_argument& e)
+    catch(invalid_argument& e)
     {
-        print_help(general);
+        printHelp(general);
         return -1;
     }
-    catch(std::exception& e)
+    catch(exception& e)
     {
-        cerr << e.what() << ", exiting"<< std::endl;
+        cerr << e.what() << ", exiting"<< endl;
         return -1;
     }
 
